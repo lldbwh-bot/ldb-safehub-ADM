@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Shield, Key, User, Landmark, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { Shield, Key, User, Landmark, ChevronDown } from 'lucide-react';
 import { UserAccount } from '../types';
 import { getSavedBranches, getSavedUsers } from '../dataStore';
 import { isCentralApiAvailable, loginCentral } from '../apiClient';
@@ -18,7 +18,6 @@ interface LoginViewProps {
 export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [branch, setBranch] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -140,23 +139,13 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                   <Key className="h-5 w-5" />
                 </div>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-2.5 border border-slate-300 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C5A059] focus:border-transparent sm:text-sm text-slate-900 font-medium"
+                  autoComplete="current-password"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C5A059] focus:border-transparent sm:text-sm text-slate-900 font-medium"
                   placeholder="ປ້ອນລະຫັດຜ່ານຂອງທ່ານ"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
               </div>
             </div>
 

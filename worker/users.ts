@@ -50,7 +50,6 @@ export const handleUsers = async (
         }
         return {
           username: row.username,
-          password_raw: '',
           status: row.status,
           branch: row.branch,
           image: row.image || undefined,

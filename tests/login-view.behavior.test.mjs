@@ -94,6 +94,16 @@ try {
   );
 
   const [usernameInput, passwordInput] = rootElement.querySelectorAll('input');
+  assert.equal(
+    passwordInput.type,
+    'password',
+    'the login password must always remain masked',
+  );
+  assert.equal(
+    passwordInput.parentElement.querySelector('button'),
+    null,
+    'the login form must not provide a password reveal control',
+  );
   const branchSelect = rootElement.querySelector('select');
   const branchValue = [...branchSelect.options]
     .find((option) => option.textContent.trim().startsWith('01.')).value;

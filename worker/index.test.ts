@@ -543,7 +543,9 @@ describe('LDB SafeHub Worker API', () => {
     expect(text).toContain('"username":"Admin"');
     expect(text).not.toContain('password_hash');
     expect(text).not.toContain('password_salt');
+    expect(text).not.toContain('password_raw');
 
+    await seedUser('Branch.User', 'branch-password', 'User', '01.Branch', ['incidents']);
     const branchToken = await login('Branch.User', 'branch-password', '01.Branch');
     const denied = await SELF.fetch('https://example.com/api/users', {
       headers: { authorization: `Bearer ${branchToken}` },

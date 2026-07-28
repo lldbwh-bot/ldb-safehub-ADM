@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, UserPlus, Trash2, Edit2, Shield, Check, X, 
-  MapPin, ShieldAlert, Key, Lock, Eye, EyeOff, Save, CheckSquare,
+  MapPin, ShieldAlert, Key, Lock, Save, CheckSquare,
   Building, Search, PlusCircle, AlertCircle, RotateCcw, Wrench
 } from 'lucide-react';
 import { UserAccount, BranchInfo, ChecklistItem, SectorInfo, RepairPreset } from '../types';
@@ -89,7 +89,6 @@ export default function AccountsView({
   const [branchErrorText, setBranchErrorText] = useState('');
 
   // UI helpers
-  const [showPasswordMap, setShowPasswordMap] = useState<Record<string, boolean>>({});
   const [errorText, setErrorText] = useState('');
 
   // Custom non-blocking confirmations/messages
@@ -175,7 +174,7 @@ export default function AccountsView({
   const handleOpenEdit = (user: UserAccount, globalIndex: number) => {
     setEditingIndex(globalIndex);
     setUsername(user.username);
-    setPassword(user.password_raw);
+    setPassword('');
     setStatus(user.status);
     setBranch(user.branch || uniqueBranches[0] || currentUser.branch);
     setAllowedTabs(user.allowedTabs || (user.status === 'Admin' 
@@ -205,7 +204,7 @@ export default function AccountsView({
     e.preventDefault();
     setErrorText('');
 
-    if (!username.trim() || !password.trim() || !branch) {
+    if (!username.trim() || !branch || (editingIndex === null && !password.trim())) {
       setErrorText('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ');
       return;
     }
@@ -218,7 +217,9 @@ export default function AccountsView({
     const cleanedUsername = username.trim();
     const updatedUserObj: UserAccount = {
       username: cleanedUsername,
-      password_raw: password.trim(),
+      password_raw:
+        password.trim() ||
+        (editingIndex !== null ? users[editingIndex].password_raw || '' : ''),
       status,
       branch,
       allowedTabs
@@ -252,13 +253,6 @@ export default function AccountsView({
 
     onSaveUsers(updatedList);
     setIsOpen(false);
-  };
-
-  const togglePasswordVisibility = (uname: string) => {
-    setShowPasswordMap(prev => ({
-      ...prev,
-      [uname]: !prev[uname]
-    }));
   };
 
   // Add Branch / Division logic
@@ -753,7 +747,6 @@ export default function AccountsView({
                 {filteredUsers.map((user, idx) => {
                   const userIndexInMain = users.findIndex(u => u.username === user.username);
                   const isSelf = user.username === currentUser.username;
-                  const canSeePassword = showPasswordMap[user.username] || false;
                   const permissionsList = user.allowedTabs || (user.status === 'Admin' 
                     ? ['dashboard', 'pm', 'inspections', 'incidents', 'approvals', 'tracking', 'repairs', 'accounts']
                     : ['dashboard', 'pm', 'inspections', 'incidents', 'approvals', 'tracking', 'repairs']);
@@ -785,16 +778,8 @@ export default function AccountsView({
                       <td className="p-4">
                         <div className="flex items-center space-x-1 font-mono text-[11px]">
                           <span className="bg-slate-100 px-2 py-1 rounded border border-slate-200 text-slate-800">
-                            {canSeePassword ? user.password_raw : '••••••••'}
+                            ••••••••
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => togglePasswordVisibility(user.username)}
-                            className="hover:bg-slate-200 p-1 rounded text-slate-500 cursor-pointer"
-                            title="Show/Hide password"
-                          >
-                            {canSeePassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                          </button>
                         </div>
                       </td>
                       <td className="p-4">
@@ -1788,10 +1773,11 @@ export default function AccountsView({
                     ລະຫັດຜ່ານ (Password) *
                   </label>
                   <input
-                    type="text"
-                    required
+                    type="password"
+                    required={editingIndex === null}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
                     placeholder="ປ້ອນລະຫັດຜ່ານບັນຊີ"
                     className="w-full border border-slate-300 rounded-xl p-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800"
                   />
