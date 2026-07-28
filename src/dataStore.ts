@@ -5,6 +5,7 @@
 
 import accountsData from './data/ ACCOUNT.json';
 import repairMappingMasterData from './repairMappingMasterData.json';
+import { queueCentralSnapshot, queueCentralUsers } from './centralDataStore';
 import checklistData from './data/checklistitem.json';
 import appSheetMappingData from './data/AppSheet_Mapping.json';
 import branchData from './data/ສາຂາ.json';
@@ -242,6 +243,7 @@ export function getSavedChecklistItems(): ChecklistItem[] {
 
 export function saveChecklistItems(list: ChecklistItem[]) {
   localStorage.setItem("ldb_checklist_items_v10", JSON.stringify(list));
+  queueCentralSnapshot("checklist-items", list as unknown as Record<string, unknown>[]);
 }
 
 export const BRANCHES: BranchInfo[] = branchData.map((item: any) => ({
@@ -265,6 +267,7 @@ export function getSavedBranches(): BranchInfo[] {
 
 export function saveBranches(list: BranchInfo[]) {
   localStorage.setItem("ldb_branches", JSON.stringify(list));
+  queueCentralSnapshot("branches", list as unknown as Record<string, unknown>[]);
 }
 
 const rawSectors = sectorData.map((item: any) => ({
@@ -300,6 +303,7 @@ export function getSavedSectors(): SectorInfo[] {
 
 export function saveSectors(list: SectorInfo[]) {
   localStorage.setItem("ldb_sectors", JSON.stringify(list));
+  queueCentralSnapshot("sectors", list as unknown as Record<string, unknown>[]);
 }
 
 export const ASSET_CATEGORIES: AssetCategoryInfo[] = assetCategoryData.map((item: any) => ({
@@ -600,6 +604,7 @@ function cleanRecordForStorage<T>(record: T): T {
 }
 
 export function saveInspections(list: InspectionRecord[]) {
+  queueCentralSnapshot("inspections", list as unknown as Record<string, unknown>[]);
   const localList = list.filter(item => {
     const base = BASE_INSPECTIONS.find(b => b.PID === item.PID);
     if (!base) return true; // Newly created
@@ -651,6 +656,7 @@ export function getSavedIncidents(): IncidentRecord[] {
 }
 
 export function saveIncidents(list: IncidentRecord[]) {
+  queueCentralSnapshot("incidents", list as unknown as Record<string, unknown>[]);
   const localList = list.filter(item => {
     const base = BASE_INCIDENTS.find(b => b.PID === item.PID);
     if (!base) return true;
@@ -683,6 +689,7 @@ export function getSavedAssessments(): RepairAssessmentRecord[] {
 }
 
 export function saveAssessments(list: RepairAssessmentRecord[]) {
+  queueCentralSnapshot("assessments", list as unknown as Record<string, unknown>[]);
   try {
     localStorage.setItem("ldb_local_assessments", JSON.stringify(list));
   } catch (err) {
@@ -727,6 +734,7 @@ export function getSavedApprovals(): RepairApprovalRecord[] {
 }
 
 export function saveApprovals(list: RepairApprovalRecord[]) {
+  queueCentralSnapshot("approvals", list as unknown as Record<string, unknown>[]);
   const localList = list.filter(item => {
     const base = BASE_APPROVALS.find(b => b.PID === item.PID);
     if (!base) return true;
@@ -777,6 +785,7 @@ export function getSavedRepairs(): RepairLogRecord[] {
 }
 
 export function saveRepairs(list: RepairLogRecord[]) {
+  queueCentralSnapshot("repairs", list as unknown as Record<string, unknown>[]);
   const localList = list.filter(item => {
     const base = BASE_REPAIRS.find(b => b.PID === item.PID);
     if (!base) return true;
@@ -872,6 +881,7 @@ export function getSavedUsers(): UserAccount[] {
 
 export function saveUsers(list: UserAccount[]) {
   localStorage.setItem("ldb_users", JSON.stringify(list));
+  queueCentralUsers(list as unknown as (Record<string, unknown> & { username: string })[]);
 }
 
 export function findIncidentByPID(pid: string): IncidentRecord | undefined {
@@ -1007,6 +1017,7 @@ export function getSavedRepairTracking(): RepairTrackingRecord[] {
 }
 
 export function saveRepairTracking(list: RepairTrackingRecord[]) {
+  queueCentralSnapshot("repair-tracking", list as unknown as Record<string, unknown>[]);
   try {
     localStorage.setItem("ldb_local_repair_tracking", JSON.stringify(list));
   } catch (err) {
@@ -1338,6 +1349,7 @@ export function getSavedPMAssets(): PMAsset[] {
 
 export function savePMAssets(list: PMAsset[]) {
   localStorage.setItem("ldb_pm_assets", JSON.stringify(list));
+  queueCentralSnapshot("pm-assets", list as unknown as Record<string, unknown>[]);
 }
 
 export function getSavedPMHistory(): PMHistoryRecord[] {
@@ -1354,6 +1366,7 @@ export function getSavedPMHistory(): PMHistoryRecord[] {
 
 export function savePMHistory(list: PMHistoryRecord[]) {
   localStorage.setItem("ldb_pm_history", JSON.stringify(list));
+  queueCentralSnapshot("pm-history", list as unknown as Record<string, unknown>[]);
 }
 
 const LEGACY_REPAIR_PRESETS: RepairPreset[] = [
@@ -1884,4 +1897,5 @@ export function getSavedRepairPresets(): RepairPreset[] {
 
 export function saveRepairPresets(list: RepairPreset[]) {
   localStorage.setItem("ldb_repair_presets_v3", JSON.stringify(list));
+  queueCentralSnapshot("repair-presets", list as unknown as Record<string, unknown>[]);
 }

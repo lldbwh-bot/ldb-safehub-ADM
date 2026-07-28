@@ -7,11 +7,12 @@ import React, { useState } from 'react';
 import { Shield, Key, User, Landmark, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { UserAccount } from '../types';
 import { getSavedBranches, getSavedUsers } from '../dataStore';
+import { loginCentral } from '../apiClient';
 // @ts-ignore
 import loginBg from '../assets/images/ldb_login_background_1782897048880.jpg';
 
 interface LoginViewProps {
-  onLoginSuccess: (user: UserAccount) => void;
+  onLoginSuccess: (user: UserAccount) => void | Promise<void>;
 }
 
 export default function LoginView({ onLoginSuccess }: LoginViewProps) {
@@ -45,24 +46,12 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     if (window.location.protocol !== 'file:') {
       setIsSubmitting(true);
       try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            username: username.trim(),
-            password: password.trim(),
-            branch,
-          }),
-        });
-        const result = await response.json() as {
-          user?: UserAccount;
-          error?: { message?: string };
-        };
-        if (!response.ok || !result.user) {
-          setError('ຊື່ຜູ້ໃຊ້, ລະຫັດຜ່ານ ຫຼື ສາຂາບໍ່ຖືກຕ້ອງ');
-          return;
-        }
-        onLoginSuccess(result.user);
+        const result = await loginCentral(
+          username.trim(),
+          password.trim(),
+          branch,
+        );
+        await onLoginSuccess(result.user);
         return;
       } catch {
         setError('ບໍ່ສາມາດຕິດຕໍ່ລະບົບ Login ໄດ້ ກະລຸນາລອງໃໝ່');

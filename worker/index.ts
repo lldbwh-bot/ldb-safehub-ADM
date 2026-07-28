@@ -1,31 +1,12 @@
-import type {
-  ApiErrorEnvelope,
-  HealthResponse,
-  VersionResponse,
-} from './contracts';
-
-const json = (body: unknown, status = 200): Response =>
-  Response.json(body, {
-    status,
-    headers: {
-      'cache-control': 'no-store',
-      'x-content-type-options': 'nosniff',
-    },
-  });
-
-const fail = (
-  status: number,
-  code: string,
-  message: string,
-  requestId: string,
-): Response =>
-  json(
-    {
-      error: { code, message },
-      requestId,
-    } satisfies ApiErrorEnvelope,
-    status,
-  );
+import { authenticate, authMe, login, logout } from './auth';
+import { bootstrap } from './bootstrap';
+import { handleBrowserImport } from './browserImport';
+import { isDatasetName } from './contracts';
+import type { HealthResponse, VersionResponse } from './contracts';
+import { handleDatasetBatch, handleDatasetRequest } from './datasets';
+import { deleteFile, downloadFile, uploadFile } from './files';
+import { fail, json } from './http';
+import { handleUsers } from './users';
 
 const checkBindings = async (
   env: Env,
@@ -35,53 +16,13 @@ const checkBindings = async (
   return { d1: 'ok', r2: 'ok' };
 };
 
-const derivePasswordHash = async (
-  password: string,
-  salt: string,
-): Promise<string> => {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(password),
-    'PBKDF2',
-    false,
-    ['deriveBits'],
-  );
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: 'PBKDF2',
-      hash: 'SHA-256',
-      salt: new TextEncoder().encode(salt),
-      iterations: 100_000,
-    },
-    key,
-    256,
-  );
-  return [...new Uint8Array(bits)]
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-};
-
-const timingSafeEqual = (left: string, right: string): boolean => {
-  if (left.length !== right.length) return false;
-  let difference = 0;
-  for (let index = 0; index < left.length; index += 1) {
-    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
-  }
-  return difference === 0;
-};
-
-const defaultAllowedTabs = (status: string): string[] => {
-  const tabs = [
-    'dashboard',
-    'pm',
-    'inspections',
-    'incidents',
-    'assessment',
-    'approvals',
-    'tracking',
-    'repairs',
-  ];
-  return status === 'Admin' ? [...tabs, 'accounts'] : tabs;
+const authenticated = async (
+  request: Request,
+  env: Env,
+  requestId: string,
+) => {
+  const user = await authenticate(request, env);
+  return user || fail(401, 'AUTH_REQUIRED', 'Authentication is required', requestId);
 };
 
 export default {
@@ -111,94 +52,94 @@ export default {
       }
 
       if (request.method === 'POST' && url.pathname === '/api/auth/login') {
-        const body = await request.json<{
-          username?: unknown;
-          password?: unknown;
-          branch?: unknown;
-        }>();
-        const username =
-          typeof body.username === 'string' ? body.username.trim() : '';
-        const password =
-          typeof body.password === 'string' ? body.password : '';
-        const branch = typeof body.branch === 'string' ? body.branch.trim() : '';
-        if (!username || !password || !branch) {
-          return fail(
-            400,
-            'INVALID_LOGIN_REQUEST',
-            'Username, password, and branch are required',
-            requestId,
-          );
-        }
-
-        const account = await env.DB.prepare(
-          `SELECT username, password_salt, password_hash, status, branch, image,
-                  allowed_tabs_json
-             FROM app_users
-            WHERE username_norm = ? AND active = 1
-            LIMIT 1`,
-        )
-          .bind(username.normalize('NFKC').toLocaleLowerCase('en-US'))
-          .first<{
-            username: string;
-            password_salt: string;
-            password_hash: string;
-            status: string;
-            branch: string;
-            image: string | null;
-            allowed_tabs_json: string;
-          }>();
-
-        if (!account || account.branch !== branch) {
-          return fail(
-            401,
-            'INVALID_CREDENTIALS',
-            'Invalid username, password, or branch',
-            requestId,
-          );
-        }
-
-        const suppliedHash = await derivePasswordHash(
-          password,
-          account.password_salt,
-        );
-        if (!timingSafeEqual(suppliedHash, account.password_hash)) {
-          return fail(
-            401,
-            'INVALID_CREDENTIALS',
-            'Invalid username, password, or branch',
-            requestId,
-          );
-        }
-
-        let allowedTabs: string[] = [];
-        try {
-          const parsed = JSON.parse(account.allowed_tabs_json);
-          if (Array.isArray(parsed)) {
-            allowedTabs = parsed.filter(
-              (tab): tab is string => typeof tab === 'string',
-            );
-          }
-        } catch {
-          allowedTabs = [];
-        }
-        if (allowedTabs.length === 0) {
-          allowedTabs = defaultAllowedTabs(account.status);
-        }
-
-        return json({
-          user: {
-            username: account.username,
-            password_raw: '',
-            status: account.status,
-            branch: account.branch,
-            image: account.image || undefined,
-            allowedTabs,
-          },
-          requestId,
-        });
+        return login(request, env, requestId);
       }
 
       if (url.pathname.startsWith('/api/')) {
+        const isProtectedRoute =
+          url.pathname === '/api/auth/me' ||
+          url.pathname === '/api/auth/logout' ||
+          url.pathname === '/api/migrations/browser-import' ||
+          url.pathname === '/api/bootstrap' ||
+          url.pathname === '/api/users' ||
+          url.pathname.startsWith('/api/users/') ||
+          url.pathname === '/api/files' ||
+          url.pathname.startsWith('/api/files/') ||
+          url.pathname.startsWith('/api/datasets/');
+        if (!isProtectedRoute) {
+          return fail(404, 'API_NOT_FOUND', 'API route not found', requestId);
+        }
+        const auth = await authenticated(request, env, requestId);
+        if (auth instanceof Response) return auth;
+
+        if (request.method === 'GET' && url.pathname === '/api/auth/me') {
+          return authMe(auth, requestId);
+        }
+        if (request.method === 'POST' && url.pathname === '/api/auth/logout') {
+          return logout(request, env);
+        }
+        if (
+          request.method === 'POST' &&
+          url.pathname === '/api/migrations/browser-import'
+        ) {
+          return handleBrowserImport(request, env, auth, requestId);
+        }
+        if (request.method === 'GET' && url.pathname === '/api/bootstrap') {
+          return bootstrap(env, auth, requestId);
+        }
+        const userMatch = /^\/api\/users(?:\/([^/]+))?$/.exec(url.pathname);
+        if (userMatch) {
+          return handleUsers(
+            request,
+            env,
+            auth,
+            userMatch[1] ? decodeURIComponent(userMatch[1]) : undefined,
+            requestId,
+          );
+        }
+        if (url.pathname === '/api/files' && request.method === 'POST') {
+          return uploadFile(request, env, auth, url, requestId);
+        }
+        const fileMatch = /^\/api\/files\/([^/]+)$/.exec(url.pathname);
+        if (fileMatch && request.method === 'GET') {
+          return downloadFile(env, decodeURIComponent(fileMatch[1]), requestId);
+        }
+        if (fileMatch && request.method === 'DELETE') {
+          return deleteFile(
+            env,
+            auth,
+            decodeURIComponent(fileMatch[1]),
+            requestId,
+          );
+        }
+
+        const datasetMatch =
+          /^\/api\/datasets\/([^/]+)(?:\/([^/]+))?$/.exec(url.pathname);
+        if (datasetMatch) {
+          const dataset = decodeURIComponent(datasetMatch[1]);
+          if (!isDatasetName(dataset)) {
+            return fail(
+              404,
+              'DATASET_NOT_FOUND',
+              'Dataset is not supported',
+              requestId,
+            );
+          }
+          if (datasetMatch[2] === 'batch' && request.method === 'POST') {
+            return handleDatasetBatch(request, env, auth, dataset, requestId);
+          }
+          return handleDatasetRequest(
+            request,
+            env,
+            auth,
+            dataset,
+            datasetMatch[2]
+              ? decodeURIComponent(datasetMatch[2])
+              : undefined,
+            requestId,
+          );
+        }
+
         return fail(404, 'API_NOT_FOUND', 'API route not found', requestId);
       }
 

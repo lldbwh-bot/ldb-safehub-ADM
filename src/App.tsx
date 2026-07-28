@@ -29,8 +29,18 @@ import {
   getSavedAssessments,
   saveAssessments,
   getSavedPMAssets,
-  getSavedPMHistory
+  getSavedPMHistory,
+  getSavedRepairPresets
 } from './dataStore';
+import {
+  getApiToken,
+  isCentralApiAvailable,
+  logoutCentral,
+} from './apiClient';
+import {
+  initializeCentralData,
+  pullCentralData,
+} from './centralDataStore';
 
 import { 
   UserAccount, 
@@ -127,6 +137,7 @@ const getCleanedIncidents = (rawIncidents: IncidentRecord[], currentAssessments:
 export default function App() {
   // Session State
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    if (isCentralApiAvailable() && !getApiToken()) return null;
     const stored = localStorage.getItem("ldb_current_user");
     if (!stored) return null;
     try {
@@ -281,9 +292,14 @@ export default function App() {
     }
   }, []);
 
-  // Auto Refresh/Sync polling from localStorage
+  // Auto refresh from the central D1 API, then hydrate the existing UI store.
   useEffect(() => {
-    const interval = setInterval(() => {
+    const refresh = async () => {
+      try {
+        await pullCentralData();
+      } catch (error) {
+        console.error("Central data refresh failed", error);
+      }
       const currentAsm = getSavedAssessments();
       const rawInc = getSavedIncidents();
       const cleanedInc = getCleanedIncidents(rawInc, currentAsm);
@@ -298,11 +314,14 @@ export default function App() {
       setPmHistory(getSavedPMHistory());
       setChecklistItems(getSavedChecklistItems());
       setSectors(getSavedSectors());
+      setUsers(getSavedUsers());
 
       if (JSON.stringify(rawInc) !== JSON.stringify(cleanedInc)) {
         saveIncidents(cleanedInc);
       }
-    }, 10000); // 10 seconds auto-refresh interval
+    };
+    if (getApiToken()) void refresh();
+    const interval = setInterval(() => void refresh(), 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -321,26 +340,47 @@ export default function App() {
     setPmHistory(getSavedPMHistory());
     setChecklistItems(getSavedChecklistItems());
     setSectors(getSavedSectors());
+    setUsers(getSavedUsers());
 
     if (JSON.stringify(rawInc) !== JSON.stringify(cleanedInc)) {
       saveIncidents(cleanedInc);
     }
   };
 
-  const handleLoginSuccess = (user: UserAccount) => {
+  const handleLoginSuccess = async (user: UserAccount) => {
+    setCurrentUser(user);
+    localStorage.setItem("ldb_current_user", JSON.stringify(user));
+    setSelectedBranch(user.status !== "Admin" ? user.branch : "ALL");
+
+    if (isCentralApiAvailable()) {
+      const snapshot = {
+        inspections: getSavedInspections(),
+        incidents: getSavedIncidents(),
+        assessments: getSavedAssessments(),
+        approvals: getSavedApprovals(),
+        "repair-tracking": getSavedRepairTracking(),
+        repairs: getSavedRepairs(),
+        "pm-assets": getSavedPMAssets(),
+        "pm-history": getSavedPMHistory(),
+        branches: getSavedBranches(),
+        "checklist-items": getSavedChecklistItems(),
+        sectors: getSavedSectors(),
+        "repair-presets": getSavedRepairPresets(),
+      };
+      try {
+        await initializeCentralData(snapshot as any);
+      } catch (error) {
+        console.error("Initial browser-to-D1 migration failed", error);
+      }
+    }
+
     const freshUsers = getSavedUsers();
+    const resolvedUser =
+      freshUsers.find(u => u.username === user.username) || user;
     setUsers(freshUsers);
-
-    const found = freshUsers.find(u => u.username === user.username);
-    const resolvedUser = found || user;
-
     setCurrentUser(resolvedUser);
     localStorage.setItem("ldb_current_user", JSON.stringify(resolvedUser));
-    if (resolvedUser.status !== "Admin") {
-      setSelectedBranch(resolvedUser.branch);
-    } else {
-      setSelectedBranch("ALL");
-    }
+    handleRefreshData();
   };
 
   const handleSaveUsers = (updatedUsers: UserAccount[]) => {
@@ -369,6 +409,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    void logoutCentral();
     setCurrentUser(null);
     localStorage.removeItem("ldb_current_user");
     setActiveTab("dashboard");
