@@ -83,6 +83,75 @@ describe('LDB SafeHub Worker API', () => {
     expect(JSON.stringify(body)).not.toContain(salt);
   });
 
+  it('restores role defaults when legacy allowed-tabs data is malformed', async () => {
+    await env.DB.prepare('DELETE FROM app_users').run();
+
+    const salt = 'legacy-tabs-salt';
+    const password = 'correct-password';
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(password),
+      'PBKDF2',
+      false,
+      ['deriveBits'],
+    );
+    const bits = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        hash: 'SHA-256',
+        salt: new TextEncoder().encode(salt),
+        iterations: 100_000,
+      },
+      key,
+      256,
+    );
+    const hash = [...new Uint8Array(bits)]
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+
+    await env.DB.prepare(
+      `INSERT INTO app_users
+        (username_norm, username, password_salt, password_hash, status, branch, allowed_tabs_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        'admin',
+        'Admin',
+        salt,
+        hash,
+        'Admin',
+        '00.HQ',
+        '[dashboard,pm,inspections]',
+      )
+      .run();
+
+    const response = await SELF.fetch('https://example.com/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        username: 'Admin',
+        password,
+        branch: '00.HQ',
+      }),
+    });
+    const body = await response.json<{
+      user: { allowedTabs: string[] };
+    }>();
+
+    expect(response.status).toBe(200);
+    expect(body.user.allowedTabs).toEqual([
+      'dashboard',
+      'pm',
+      'inspections',
+      'incidents',
+      'assessment',
+      'approvals',
+      'tracking',
+      'repairs',
+      'accounts',
+    ]);
+  });
+
   it('reports healthy D1 and R2 bindings', async () => {
     const response = await SELF.fetch('https://example.com/api/health');
     const body = await response.json<{

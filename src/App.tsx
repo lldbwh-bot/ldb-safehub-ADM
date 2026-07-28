@@ -1361,7 +1361,7 @@ export default function App() {
 
   const isTabAllowed = (tabId: string) => {
     if (!currentUser) return false;
-    if (currentUser.allowedTabs) {
+    if (Array.isArray(currentUser.allowedTabs) && currentUser.allowedTabs.length > 0) {
       return currentUser.allowedTabs.includes(tabId);
     }
     if (currentUser.status === "Admin") {

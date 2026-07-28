@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
@@ -35,6 +35,13 @@ Object.assign(globalThis, {
 Object.defineProperty(globalThis, 'navigator', { configurable: true, value: window.navigator });
 
 try {
+  const appSource = await readFile(join(process.cwd(), 'src/App.tsx'), 'utf8');
+  assert.match(
+    appSource,
+    /Array\.isArray\(currentUser\.allowedTabs\)\s*&&\s*currentUser\.allowedTabs\.length\s*>\s*0/,
+    'an empty cached permission list must fall back to role defaults instead of hiding all navigation',
+  );
+
   const React = await import('react');
   const { act } = React;
   const { createRoot } = await import('react-dom/client');

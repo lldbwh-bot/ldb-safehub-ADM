@@ -70,6 +70,20 @@ const timingSafeEqual = (left: string, right: string): boolean => {
   return difference === 0;
 };
 
+const defaultAllowedTabs = (status: string): string[] => {
+  const tabs = [
+    'dashboard',
+    'pm',
+    'inspections',
+    'incidents',
+    'assessment',
+    'approvals',
+    'tracking',
+    'repairs',
+  ];
+  return status === 'Admin' ? [...tabs, 'accounts'] : tabs;
+};
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -166,6 +180,9 @@ export default {
           }
         } catch {
           allowedTabs = [];
+        }
+        if (allowedTabs.length === 0) {
+          allowedTabs = defaultAllowedTabs(account.status);
         }
 
         return json({
