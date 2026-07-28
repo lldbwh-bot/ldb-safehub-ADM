@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { Shield, Key, User, Landmark, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { UserAccount } from '../types';
 import { getSavedBranches, getSavedUsers } from '../dataStore';
-import { loginCentral } from '../apiClient';
+import { isCentralApiAvailable, loginCentral } from '../apiClient';
 // @ts-ignore
 import loginBg from '../assets/images/ldb_login_background_1782897048880.jpg';
 
@@ -43,7 +43,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       return;
     }
 
-    if (window.location.protocol !== 'file:') {
+    if (isCentralApiAvailable()) {
       setIsSubmitting(true);
       try {
         const result = await loginCentral(
@@ -61,7 +61,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       }
     }
 
-    // Standalone file preview fallback. Production authentication is handled by D1.
+    // File and Demo/UAT previews intentionally keep browser-local authentication.
     const user = usersList.find(
       (acc) => acc.username.toLowerCase() === username.trim().toLowerCase()
     );

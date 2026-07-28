@@ -58,21 +58,7 @@
       "vars": {
         "APP_ENV": "uat",
         "APP_VERSION": "git-uat"
-      },
-      "d1_databases": [
-        {
-          "binding": "DB",
-          "database_name": "ldb-safehub-demo",
-          "database_id": "728e1364-7c56-4579-a143-af35e31b2fe0",
-          "migrations_dir": "migrations"
-        }
-      ],
-      "r2_buckets": [
-        {
-          "binding": "FILES",
-          "bucket_name": "ldb-safehub-demo-files"
-        }
-      ]
+      }
     }
   }
 }

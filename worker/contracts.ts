@@ -12,8 +12,8 @@ export interface HealthResponse {
   version: string;
   timestamp: string;
   services: {
-    d1: 'ok';
-    r2: 'ok';
+    d1: 'ok' | 'disabled';
+    r2: 'ok' | 'disabled';
   };
   requestId: string;
 }

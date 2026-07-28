@@ -17,7 +17,6 @@
     "cf:types": "wrangler types worker/bindings.d.ts",
     "cf:config": "node scripts/write-wrangler-config.mjs",
     "cf:migrate:prod": "wrangler d1 migrations apply ldb-safehub-prod --remote",
-    "cf:migrate:uat": "wrangler d1 migrations apply ldb-safehub-demo --remote --env uat",
     "deploy:prod": "npm run build:web && wrangler deploy",
     "deploy:uat": "npm run build:web && wrangler deploy --env uat"
   },

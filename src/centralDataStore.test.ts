@@ -4,8 +4,16 @@ import {
   getStableRecordId,
   unwrapDataset,
 } from './centralDataStore';
+import { isProductionHost } from './apiClient';
 
 describe('central datastore compatibility mapping', () => {
+  it('enables D1/R2 only on Production and keeps UAT browser-local', () => {
+    expect(isProductionHost('ldb-adm-safehub.com')).toBe(true);
+    expect(isProductionHost('ldb-safehub-prod.lldbwh.workers.dev')).toBe(true);
+    expect(isProductionHost('demo.ldb-adm-safehub.com')).toBe(false);
+    expect(isProductionHost('localhost')).toBe(false);
+  });
+
   it('uses canonical IDs for transactional and master records', () => {
     expect(getStableRecordId('incidents', { PID: 'INC-1' }, 0)).toBe('INC-1');
     expect(getStableRecordId('pm-assets', { assetCode: 'PM-1' }, 0)).toBe('PM-1');

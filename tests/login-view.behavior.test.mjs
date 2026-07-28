@@ -21,7 +21,7 @@ await build({
 
 const dom = new JSDOM('<!doctype html><html><body><main id="root"></main></body></html>', {
   pretendToBeVisual: true,
-  url: 'http://localhost/',
+  url: 'https://ldb-adm-safehub.com/',
 });
 const { window } = dom;
 Object.assign(globalThis, {

@@ -2,8 +2,17 @@ import type { UserAccount } from './types';
 
 export const API_TOKEN_KEY = 'ldb_api_token';
 
+const PRODUCTION_HOSTS = new Set([
+  'ldb-adm-safehub.com',
+  'www.ldb-adm-safehub.com',
+  'ldb-safehub-prod.lldbwh.workers.dev',
+]);
+
+export const isProductionHost = (hostname: string): boolean =>
+  PRODUCTION_HOSTS.has(hostname.trim().toLocaleLowerCase('en-US'));
+
 export const isCentralApiAvailable = (): boolean =>
-  typeof window !== 'undefined' && window.location.protocol !== 'file:';
+  typeof window !== 'undefined' && isProductionHost(window.location.hostname);
 
 export const getApiToken = (): string =>
   typeof window === 'undefined' ? '' : window.localStorage.getItem(API_TOKEN_KEY) || '';

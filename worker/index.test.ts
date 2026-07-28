@@ -2,6 +2,7 @@
 
 import { env, SELF } from 'cloudflare:test';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import worker from './index';
 
 const hashPassword = async (password: string, salt: string): Promise<string> => {
   const key = await crypto.subtle.importKey(
@@ -548,5 +549,44 @@ describe('LDB SafeHub Worker API', () => {
       headers: { authorization: `Bearer ${branchToken}` },
     });
     expect(denied.status).toBe(403);
+  });
+});
+
+describe('Demo/UAT preview isolation', () => {
+  it('serves health without D1/R2 and refuses central API access', async () => {
+    const previewEnv = {
+      APP_ENV: 'uat',
+      APP_VERSION: 'git-uat',
+      ASSETS: {
+        fetch: () => new Response('preview'),
+      },
+    } as unknown as Env;
+
+    const health = await worker.fetch(
+      new Request('https://demo.ldb-adm-safehub.com/api/health'),
+      previewEnv,
+    );
+    expect(health.status).toBe(200);
+    expect(await health.json()).toMatchObject({
+      environment: 'uat',
+      services: { d1: 'disabled', r2: 'disabled' },
+    });
+
+    const login = await worker.fetch(
+      new Request('https://demo.ldb-adm-safehub.com/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          username: 'demo',
+          password: 'demo',
+          branch: '00.HQ',
+        }),
+      }),
+      previewEnv,
+    );
+    expect(login.status).toBe(404);
+    expect(await login.json()).toMatchObject({
+      error: { code: 'PREVIEW_MODE' },
+    });
   });
 });
