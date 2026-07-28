@@ -1,0 +1,488 @@
+[
+  {
+    "id": "p1",
+    "repairSubCategory": "ລະບົບ ແອເຟັນ",
+    "repairSubItem": "ມໍເຕີພັດລົມແຜງເຢັນຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ມໍເຕີພັດລົມແຜງເຢັນ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p2",
+    "repairSubCategory": "ລະບົບ ແອເຟັນ",
+    "repairSubItem": "ຕູ້ຄວາມຄຸມ Safety switchຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ຕູ້ຄວາມຄຸມ Safety switch",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p3",
+    "repairSubCategory": "ລະບົບ ແອເຟັນ",
+    "repairSubItem": "ເຕີມນໍ້າຢາ R410A",
+    "workType": "ບໍລິການ",
+    "sparePart": "ນໍ້າຢາແອ R410A",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p4",
+    "repairSubCategory": "ລະບົບ ແອເຟັນ",
+    "repairSubItem": "ແຜນເມນບອດຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ແຜນເມນບອດ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p5",
+    "repairSubCategory": "ລະບົບ ແອເຟັນ",
+    "repairSubItem": "ໄຟຈ່າຍ ແຜງຮ້ອນ ແລະ ແຜງເຢັນ ແອ ເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ໄຟຈ່າຍ ແຜງຮ້ອນ ແລະ ແຜງເຢັນ ແອ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p6",
+    "repairSubCategory": "ລະບົບ ແອເຟັນ",
+    "repairSubItem": "ທໍ່ນໍ້າແອເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ທໍ່ນໍ້າແອ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p7",
+    "repairSubCategory": "ລະບົບ ແອເຟັນ",
+    "repairSubItem": "ປໍ້ານໍ້າເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ປໍ້ານໍ້າແອ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p8",
+    "repairSubCategory": "ລະບົບ ແອເຟັນ",
+    "repairSubItem": "ເຊັນເຊີຕາຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ເຊັນເຊີ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p9",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ດອກໄຟຕາແມວ ຂອບທອງຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟຕາແມວ ຂອບທອງ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p10",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ນໍ້າມັນຈັກປັ່ນໄຟສໍາຮອງບໍ່ພຽງພໍ-ນໍ້າມັນຂາດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ເຕີມນໍ້າມັນຈັກປັ່ນໄຟສໍາຮອງ",
+    "unit": "ລິດ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p11",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຫຼັກສາຍດິນ 1ແມັດ ຊຳລຸດ-ຂາດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ຫຼັກສາຍດິນ 1ແມັດ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p12",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ດອກໄຟນີອອນ LED 18wຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟນີອອນ LED 18w",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p13",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ທາມເມີສະວິດຊໍາລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ທາມເມີສະວິດ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p14",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ສະວິດແສງຕາເວັນຊໍາລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ສະວິດແສງຕາເວັນ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p15",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ໄຟຫ້ອງ ນອນເຈົ້າໜ້າທີ່ຊໂລຸດເພ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ໄຟຫ້ອງ ນອນເຈົ້າໜ້າທີ່",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p16",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ໄຟໂລໂກ້ດ້ານໜ້າອາຄານຊໍາລຸດຂາດ-ເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ໄຟໂລໂກ້ດ້ານໜ້າອາຄານ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p17",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ດອກໄຟ ອ້ອມຮອບອາຄານຊໍາລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p18",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ດອກໄຟມົນ LED (ຕູ້ ATM)ຊຳລຸດເພ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟມົນ LED (ຕູ້ ATM)",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p19",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ດອກໄຟຕູ້ໂຊ LED ເສັ້ນຊຳລຸດເພ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟຕູ້ໂຊ LED ເສັ້ນ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p20",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ຖັງເກັບນໍ້າໃຊ້ ເປຶ້ອນ",
+    "workType": "ບໍລິການ",
+    "sparePart": "ບໍລິການລ້ຽງຖັງເກັບນໍ້າໃຊ້",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p21",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ຖັງເກັບນໍ້າໃຊ້ຊຳລຸດເພ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ຖັງເກັບນໍ້າໃຊ້",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p22",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ປໍ້າສົ່ງນໍ້າດັບເພິງຊໍາລຸດເພ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ປໍ້າສົ່ງນໍ້າດັບເພິງ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p23",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ຊັກໂຄກຊໍາລຸດເພ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ຊັກໂຄກ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p24",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ກັອກນໍ້າຮົ່ວຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ກັອກນໍ້າ 3ທາງ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p25",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຕູ້ ATM ເປເພ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ຕູ້ ATM ດ້ານໜ້າອາຄານ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p26",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຈັກປັ່ນໄຟສໍາຮອງເພ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ຈັກປັ່ນໄຟສໍາຮອງ",
+    "unit": "ໜ່ວຍ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p27",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຕູ້ຄວາມຄຸມໄຟ MDBຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ຕູ້ຄວາມຄຸມໄຟ MDB",
+    "unit": "ຕູ້",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p28",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ໜໍ້ແປງໄຟຟ້າຊຳລຸດເພ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ໝໍ້ແປງໄຟຟ້າ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p29",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ປັກສຽບໄຟຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ປັກສຽບກາວ ຄູ່ 16A 250V",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p30",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຫຼອດໄຟເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟສະປອດໄລ LED 100W",
+    "unit": "ດອກ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p31",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຫຼອດໄຟເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟ Panel light 300*600mm",
+    "unit": "ດອກ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p32",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຫຼອດໄຟເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟ Panel light 600*600mm",
+    "unit": "ດອກ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p33",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຫຼອດໄຟເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟຕາແມວ 12W dia5\"ຜັງເພດານ",
+    "unit": "ດອກ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p34",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຫຼອດໄຟເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟຕາແມວ 9W",
+    "unit": "ດອກ",
+    "estimatedUnitCost": 0
+  },
+  {
+    "id": "p35",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ຫຼອດໄຟເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ດອກໄຟ LED 18W",
+    "unit": "ດອກ",
+    "estimatedUnitCost": 25000
+  },
+  {
+    "id": "p36",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ສະວິດໄຟເສຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ສະວິດໄຟ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 15000
+  },
+  {
+    "id": "p37",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ປັກສຽບໄຟຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ປັກສຽບໄຟ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 20000
+  },
+  {
+    "id": "p38",
+    "repairSubCategory": "ລະບົບໄຟຟ້າ",
+    "repairSubItem": "ເບຣກເກີ້ຕັດເລື້ອຍ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ເບຣກເກີ້ 30A",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 65000
+  },
+  {
+    "id": "p39",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ກັອກນໍ້າຮົ່ວ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ກັອກນໍ້າ 2 ທາງ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 45000
+  },
+  {
+    "id": "p40",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ສາຍຊຳລະຮົ່ວ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ສາຍສີດຊຳລະ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 35000
+  },
+  {
+    "id": "p41",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ສາຍອ່ອນນໍ້າຮົ່ວ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ສາຍອ່ອນ 1/2\"",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 15000
+  },
+  {
+    "id": "p42",
+    "repairSubCategory": "ລະບົບເຄື່ອງປັບອາກາດ",
+    "repairSubItem": "ແອເຢັນບໍ່ພໍ",
+    "workType": "ບໍລິການ",
+    "sparePart": "ບໍລິການລ້າງແອ",
+    "unit": "ເຄື່ອງ",
+    "estimatedUnitCost": 150000
+  },
+  {
+    "id": "p43",
+    "repairSubCategory": "ລະບົບເຄື່ອງປັບອາກາດ",
+    "repairSubItem": "ແອມີນໍ້າຢອດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ລ້າງທໍ່ນໍ້າທິ້ງແອ",
+    "unit": "ເຄື່ອງ",
+    "estimatedUnitCost": 100000
+  },
+  {
+    "id": "p44",
+    "repairSubCategory": "ລະບົບເຄື່ອງປັບອາກາດ",
+    "repairSubItem": "ແອບໍ່ເຮັດວຽກ",
+    "workType": "ກວດເຊັກ/ສ້ອມ",
+    "sparePart": "ຄ່າກວດເຊັກແອ",
+    "unit": "ເຄື່ອງ",
+    "estimatedUnitCost": 50000
+  },
+  {
+    "id": "p45",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ໂຖສ້ວມຕັນ",
+    "workType": "ບໍລິການ",
+    "sparePart": "ບໍລິການລອກໂຖສ້ວມ",
+    "unit": "ຄັ້ງ",
+    "estimatedUnitCost": 200000
+  },
+  {
+    "id": "p46",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ນໍ້າໄຫຼບໍ່ຢຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ຊຸດລູກລອຍໂຖສ້ວມ",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 85000
+  },
+  {
+    "id": "p47",
+    "repairSubCategory": "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
+    "repairSubItem": "ຖັງເສັບຕິກເຕັມ",
+    "workType": "ບໍລິການ",
+    "sparePart": "ບໍລິການດູດສິ່ງປະຕິກູນ",
+    "unit": "ຖັງ",
+    "estimatedUnitCost": 350000
+  },
+  {
+    "id": "p48",
+    "repairSubCategory": "ລະບົບເຄືອຂ່າຍ & IT",
+    "repairSubItem": "ອິນເຕີເນັດໃຊ້ບໍ່ໄດ້",
+    "workType": "ກວດເຊັກ/ສ້ອມ",
+    "sparePart": "ຄ່າກວດເຊັກ Network",
+    "unit": "ຄັ້ງ",
+    "estimatedUnitCost": 150000
+  },
+  {
+    "id": "p49",
+    "repairSubCategory": "ລະບົບເຄືອຂ່າຍ & IT",
+    "repairSubItem": "Router/Switch ຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "Router / Switch",
+    "unit": "ເຄື່ອງ",
+    "estimatedUnitCost": 450000
+  },
+  {
+    "id": "p50",
+    "repairSubCategory": "ລະບົບເຄືອຂ່າຍ & IT",
+    "repairSubItem": "ສາຍ LAN ຂາດ/ຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ສາຍ LAN",
+    "unit": "ເສັ້ນ",
+    "estimatedUnitCost": 15000
+  },
+  {
+    "id": "p51",
+    "repairSubCategory": "ລະບົບປ້ອງກັນອັກຄີໄພ",
+    "repairSubItem": "ຖັງດັບເພີງໝົດອາຍຸ",
+    "workType": "ບໍລິການ",
+    "sparePart": "ບໍລິການອັດນໍ້າຢາ",
+    "unit": "ຖັງ",
+    "estimatedUnitCost": 120000
+  },
+  {
+    "id": "p52",
+    "repairSubCategory": "ລະບົບປ້ອງກັນອັກຄີໄພ",
+    "repairSubItem": "ສັນຍານເຕືອນໄຟບໍ່ເຮັດວຽກ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "Smoke Detector / Alarm",
+    "unit": "ອັນ",
+    "estimatedUnitCost": 180000
+  },
+  {
+    "id": "p53",
+    "repairSubCategory": "ລະບົບປ້ອງກັນອັກຄີໄພ",
+    "repairSubItem": "ປໍ້ានໍ້າດັບເພີງຊຳລຸດ",
+    "workType": "ກວດເຊັກ/ສ້ອມ",
+    "sparePart": "ຄ່າກວດເຊັກປໍ້າດັບເພີງ",
+    "unit": "ຄັ້ງ",
+    "estimatedUnitCost": 250000
+  },
+  {
+    "id": "p54",
+    "repairSubCategory": "ອື່ນໆ",
+    "repairSubItem": "ອຸປະກອນອື່ນໆຊຳລຸດ",
+    "workType": "ປ່ຽນອະໄຫຼ່",
+    "sparePart": "ລາຍການອື່ນໆ",
+    "unit": "ລາຍການ",
+    "estimatedUnitCost": 0
+  }
+]

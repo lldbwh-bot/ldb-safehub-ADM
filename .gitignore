@@ -1,0 +1,17 @@
+node_modules/
+build/
+dist/
+coverage/
+.single-file-temp/
+release/
+.DS_Store
+*.log
+.env*
+!.env.example
+docs/superpowers/
+
+# Local/raw exports are intentionally excluded from the deployment source.
+src/data/All_Forms.json
+src/data/monitor*.json
+src/data/Summary.json
+tests/.repair-frequency-report-*/

@@ -1,0 +1,351 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Lao:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Noto Sans Lao", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Redefine emerald to represent the Navy Blue theme from the image (#0e1426) */
+  --color-emerald-50: #f1f5f9;
+  --color-emerald-100: #e2eafc;
+  --color-emerald-200: #cbd5e1;
+  --color-emerald-300: #94a3b8;
+  --color-emerald-400: #475569;
+  --color-emerald-500: #3b82f6;
+  --color-emerald-600: #2563eb;
+  --color-emerald-700: #1d4ed8;
+  --color-emerald-750: #111a2f;
+  --color-emerald-800: #0e1426; /* Exact deep slate navy background from user's image */
+  --color-emerald-850: #0d1222; /* High contrast deep slate navy text/bg */
+  --color-emerald-900: #0a0e1a; /* Even darker */
+  --color-emerald-950: #05070e; /* Near black */
+
+  /* Redefine indigo to represent shades of steel and slate blue to coordinate with navy */
+  --color-indigo-50: #f8fafc;
+  --color-indigo-100: #f1f5f9;
+  --color-indigo-200: #e2e8f0;
+  --color-indigo-300: #94a3b8;
+  --color-indigo-400: #64748b;
+  --color-indigo-500: #475569;
+  --color-indigo-600: #334155;
+  --color-indigo-650: #1e293b;
+  --color-indigo-700: #0f172a;
+  --color-indigo-750: #0e1426;
+  --color-indigo-800: #0a0e1a;
+  --color-indigo-850: #080b14;
+  --color-indigo-900: #05070e;
+  --color-indigo-950: #020306;
+
+  /* Redefine teal to also harmonize with our navy blue theme */
+  --color-teal-50: #f0f7ff;
+  --color-teal-100: #e1effe;
+  --color-teal-200: #c3ddfd;
+  --color-teal-300: #96c5fc;
+  --color-teal-400: #60a5fa;
+  --color-teal-500: #3b82f6;
+  --color-teal-600: #2563eb;
+  --color-teal-700: #1d4ed8;
+  --color-teal-800: #0a0e1a;
+  --color-teal-900: #05070e;
+  --color-teal-950: #020306;
+}
+
+.safehub-app-theme {
+  --safehub-app-bg: #050a14;
+  --safehub-panel: #04101f;
+  --safehub-surface: #08182b;
+  --safehub-surface-hover: #0d2139;
+  --safehub-text: #f8fafc;
+  --safehub-text-secondary: #cbd5e1;
+  --safehub-text-muted: #94a3b8;
+  --safehub-cyan: #67e8f9;
+  --safehub-gold: #c5a059;
+  --safehub-info: #93c5fd;
+  --safehub-indigo: #c4b5fd;
+  --safehub-success: #86efac;
+  --safehub-warning: #fde68a;
+  --safehub-danger: #fca5a5;
+  color: var(--safehub-text);
+  background-color: var(--safehub-app-bg);
+}
+
+/* Custom styling presets */
+body {
+  font-family: var(--font-sans);
+  background-color: #050a14;
+  color: #f8fafc;
+}
+
+.bg-ldb-brand {
+  background-color: #050a14;
+  background-image: 
+    linear-gradient(90deg, rgba(59, 130, 246, 0.06) 1px, transparent 1px),
+    radial-gradient(circle at 40% 15%, #0e2243 0%, #050a14 75%);
+  background-size: 20px 100%, 100% 100%;
+}
+
+.gold-accent-line {
+  background: linear-gradient(90deg, transparent, #C5A059, transparent);
+  height: 2px;
+  width: 100%;
+}
+
+/* --- Global Font Size Accessibility & Readability Enhancements for Lao Script --- */
+
+/* Globally increase the baseline font size for body and default elements */
+html {
+  font-size: 14px; /* default balanced baseline */
+  transition: font-size 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-size: 0.95rem !important; /* Slightly larger, extremely readable default text */
+}
+
+/* Override utility classes that make text too small, especially for detailed Lao characters */
+.text-\[10px\],
+[class*="text-\[10px\]"] {
+  font-size: 0.8rem !important;
+}
+
+.text-\[11px\],
+[class*="text-\[11px\]"] {
+  font-size: 0.83rem !important;
+}
+
+.text-\[12px\],
+[class*="text-\[12px\]"] {
+  font-size: 0.86rem !important;
+}
+
+.text-xs,
+[class*="text-xs"] {
+  font-size: 0.86rem !important; /* Comfortable minimum relative size */
+}
+
+.text-sm,
+[class*="text-sm"] {
+  font-size: 0.95rem !important; /* Comfortable minimum relative size */
+}
+
+.text-base,
+[class*="text-base"] {
+  font-size: 1.05rem !important;
+}
+
+/* Enforce highly readable, medium-sized table typography */
+table, 
+.table {
+  font-size: 0.88rem !important; /* Extremely clear and visible */
+}
+
+table th,
+.table-header,
+thead tr th {
+  font-size: 0.85rem !important; /* Readable, slightly larger uppercase headings */
+  padding-top: 0.6rem !important;
+  padding-bottom: 0.6rem !important;
+}
+
+table td,
+.table-cell,
+tbody tr td {
+  font-size: 0.88rem !important;
+  padding-top: 0.75rem !important; /* Generous vertical padding for touch & readability */
+  padding-bottom: 0.75rem !important;
+}
+
+/* Ensure inputs, select dropdowns, and button tags have great, readable text sizes */
+input,
+select,
+textarea,
+button {
+  font-size: 0.95rem !important; /* Clear, legible text size for forms and controls */
+}
+
+/* Badge and small status tag sizing adjustments */
+span[class*="rounded-full"],
+span[class*="rounded-xl"],
+span[class*="rounded-lg"],
+.badge {
+  font-size: 0.8rem !important; /* Perfect sweet spot for badges */
+  font-weight: 600 !important;
+}
+
+/* --- Authenticated dark-theme compatibility layer --- */
+.safehub-app-theme :where(.bg-white, .bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100) {
+  background-color: var(--safehub-panel) !important;
+  color: var(--safehub-text) !important;
+  border-color: rgb(103 232 249 / 0.16) !important;
+}
+
+.safehub-app-theme :where(.bg-white\/90, .bg-white\/80, .bg-white\/70, .bg-white\/60) {
+  background-color: rgb(4 16 31 / 0.94) !important;
+  color: var(--safehub-text) !important;
+}
+
+/* Intermediate neutral utilities were used by legacy tabs, KPI cards, and
+   read-only fields. Keep them dark inside the authenticated application. */
+.safehub-app-theme :where(
+  .bg-slate-200, .bg-slate-300, .bg-slate-400,
+  .bg-gray-200, .bg-gray-300, .bg-gray-400
+) {
+  background-color: var(--safehub-surface-hover) !important;
+  color: var(--safehub-text) !important;
+  border-color: rgb(103 232 249 / 0.18) !important;
+}
+
+.safehub-app-theme :where(
+  .bg-slate-50\/70, .bg-slate-50\/60, .bg-slate-50\/50, .bg-slate-50\/40, .bg-slate-50\/20,
+  .bg-slate-100\/70, .bg-slate-100\/60, .bg-slate-100\/50, .bg-slate-100\/40, .bg-slate-100\/20,
+  .bg-gray-50\/70, .bg-gray-50\/60, .bg-gray-50\/50, .bg-gray-100\/60, .bg-gray-100\/50
+) {
+  background-color: rgb(8 24 43 / 0.88) !important;
+  color: var(--safehub-text) !important;
+}
+
+.safehub-app-theme :where(.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700, .text-black) {
+  color: var(--safehub-text) !important;
+}
+
+.safehub-app-theme :where(.text-slate-600, .text-slate-500) {
+  color: var(--safehub-text-secondary) !important;
+}
+
+.safehub-app-theme :where(.text-slate-400, .text-slate-300) {
+  color: var(--safehub-text-muted) !important;
+}
+
+.safehub-app-theme :where(.border-slate-100, .border-slate-200, .border-slate-300, .border-gray-100, .border-gray-200, .border-gray-300) {
+  border-color: rgb(103 232 249 / 0.16) !important;
+}
+
+.safehub-app-theme :where(input, select, textarea) {
+  background-color: var(--safehub-surface) !important;
+  color: var(--safehub-text) !important;
+  border-color: rgb(103 232 249 / 0.22) !important;
+  color-scheme: dark;
+}
+
+.safehub-app-theme :where(input, select, textarea)::placeholder {
+  color: var(--safehub-text-muted) !important;
+  opacity: 1;
+}
+
+.safehub-app-theme :where(input, select, textarea):focus {
+  border-color: rgb(103 232 249 / 0.55) !important;
+  outline: 2px solid rgb(103 232 249 / 0.28);
+  outline-offset: 1px;
+}
+
+.safehub-app-theme :where(input, select, textarea):disabled {
+  background-color: rgb(13 33 57 / 0.62) !important;
+  color: var(--safehub-text-muted) !important;
+  opacity: 1;
+}
+
+.safehub-app-theme :where(table) {
+  color: var(--safehub-text-secondary);
+}
+
+.safehub-app-theme :where(thead) {
+  background-color: var(--safehub-surface) !important;
+  color: var(--safehub-text) !important;
+}
+
+.safehub-app-theme :where(tbody tr) {
+  border-color: rgb(103 232 249 / 0.12) !important;
+}
+
+.safehub-app-theme :where(tbody tr:hover) {
+  background-color: var(--safehub-surface-hover) !important;
+}
+
+.safehub-app-theme :where([role="dialog"]) {
+  color: var(--safehub-text);
+}
+
+.safehub-app-theme :where(.bg-red-50, .bg-red-100) {
+  background-color: rgb(127 29 29 / 0.35) !important;
+}
+
+.safehub-app-theme :where(.bg-amber-50, .bg-amber-100, .bg-orange-50, .bg-orange-100) {
+  background-color: rgb(120 53 15 / 0.32) !important;
+}
+
+.safehub-app-theme :where(.bg-emerald-50, .bg-emerald-100, .bg-green-50, .bg-green-100) {
+  background-color: rgb(6 78 59 / 0.34) !important;
+}
+
+.safehub-app-theme :where(.bg-blue-50, .bg-blue-100, .bg-indigo-50, .bg-indigo-100, .bg-cyan-50, .bg-cyan-100) {
+  background-color: rgb(8 47 73 / 0.44) !important;
+}
+
+.safehub-app-theme :where(.bg-sky-50, .bg-sky-100) {
+  background-color: rgb(7 31 51 / 0.94) !important;
+  color: var(--safehub-text) !important;
+}
+
+.safehub-app-theme :where(
+  .bg-blue-50\/60, .bg-blue-50\/50, .bg-blue-50\/40, .bg-blue-50\/20,
+  .bg-indigo-50\/60, .bg-indigo-50\/50, .bg-indigo-50\/40, .bg-indigo-50\/20,
+  .bg-cyan-50\/60, .bg-cyan-50\/50, .bg-cyan-50\/40, .bg-cyan-50\/20,
+  .bg-sky-50\/60, .bg-sky-50\/50, .bg-sky-50\/40, .bg-sky-50\/20
+) {
+  background-color: rgb(8 47 73 / 0.52) !important;
+  color: var(--safehub-text) !important;
+}
+
+/* Accessible semantic foregrounds for authenticated dark surfaces. */
+.safehub-app-theme :where(.text-red-950,
+  .text-red-900, .text-red-850, .text-red-800,
+  .text-red-750, .text-red-700, .text-red-600
+) {
+  color: var(--safehub-danger) !important;
+}
+
+.safehub-app-theme :where(.text-amber-950,
+  .text-amber-900, .text-amber-850, .text-amber-800,
+  .text-amber-750, .text-amber-700, .text-amber-600,
+  .text-orange-950, .text-orange-900, .text-orange-850, .text-orange-800,
+  .text-orange-750, .text-orange-700, .text-orange-600,
+  .text-yellow-950, .text-yellow-900, .text-yellow-800,
+  .text-yellow-700, .text-yellow-600
+) {
+  color: var(--safehub-warning) !important;
+}
+
+.safehub-app-theme :where(.text-emerald-950,
+  .text-emerald-900, .text-emerald-850,
+  .text-emerald-800, .text-emerald-750, .text-emerald-700, .text-emerald-600,
+  .text-green-950, .text-green-900, .text-green-800,
+  .text-green-700, .text-green-600,
+  .text-teal-950, .text-teal-900, .text-teal-800,
+  .text-teal-700, .text-teal-600
+) {
+  color: var(--safehub-success) !important;
+}
+
+.safehub-app-theme :where(.text-blue-950,
+  .text-blue-900, .text-blue-850, .text-blue-805,
+  .text-blue-800, .text-blue-750, .text-blue-700, .text-blue-600,
+  .text-cyan-950, .text-cyan-900, .text-cyan-800,
+  .text-cyan-700, .text-cyan-600
+) {
+  color: var(--safehub-info) !important;
+}
+
+.safehub-app-theme :where(.text-indigo-950,
+  .text-indigo-900, .text-indigo-850,
+  .text-indigo-800, .text-indigo-750, .text-indigo-700,
+  .text-indigo-650, .text-indigo-600
+) {
+  color: var(--safehub-indigo) !important;
+}
+
+.safehub-app-theme :where(.text-slate-650) {
+  color: var(--safehub-text-secondary) !important;
+}
+
+
