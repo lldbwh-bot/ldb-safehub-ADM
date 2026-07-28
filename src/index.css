@@ -77,6 +77,12 @@ body {
   color: #f8fafc;
 }
 
+/* Never expose browser-native password reveal controls (Microsoft Edge/IE). */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
 .bg-ldb-brand {
   background-color: #050a14;
   background-image: 

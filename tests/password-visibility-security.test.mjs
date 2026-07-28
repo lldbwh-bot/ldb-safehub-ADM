@@ -10,6 +10,10 @@ const accountsSource = await readFile(
   join(process.cwd(), 'src/components/AccountsView.tsx'),
   'utf8',
 );
+const globalStyles = await readFile(
+  join(process.cwd(), 'src/index.css'),
+  'utf8',
+);
 
 assert.doesNotMatch(
   loginSource,
@@ -41,6 +45,11 @@ assert.match(
   accountsSource,
   /type="password"[\s\S]{0,180}autoComplete="new-password"/,
   'Account password changes must use a masked input',
+);
+assert.match(
+  globalStyles,
+  /input\[type=['"]password['"]\]::?-ms-reveal[\s\S]{0,180}display:\s*none/,
+  'Microsoft browser native password reveal controls must be hidden globally',
 );
 
 console.log('Password visibility security checks passed.');
