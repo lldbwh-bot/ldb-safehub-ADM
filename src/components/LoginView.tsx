@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Shield, Key, User, Landmark, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { UserAccount } from '../types';
-import { getSavedUsers } from '../dataStore';
+import { getSavedBranches, getSavedUsers } from '../dataStore';
 // @ts-ignore
 import loginBg from '../assets/images/ldb_login_background_1782897048880.jpg';
 
@@ -20,10 +20,15 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [branch, setBranch] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const usersList = React.useMemo(() => getSavedUsers(), []);
+  const branchOptions = React.useMemo(
+    () => Array.from(new Set(getSavedBranches().map((item) => item.ສາຂາ).filter(Boolean))).sort(),
+    [],
+  );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -37,7 +42,37 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       return;
     }
 
-    // Authenticate
+    if (window.location.protocol !== 'file:') {
+      setIsSubmitting(true);
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            username: username.trim(),
+            password: password.trim(),
+            branch,
+          }),
+        });
+        const result = await response.json() as {
+          user?: UserAccount;
+          error?: { message?: string };
+        };
+        if (!response.ok || !result.user) {
+          setError('ຊື່ຜູ້ໃຊ້, ລະຫັດຜ່ານ ຫຼື ສາຂາບໍ່ຖືກຕ້ອງ');
+          return;
+        }
+        onLoginSuccess(result.user);
+        return;
+      } catch {
+        setError('ບໍ່ສາມາດຕິດຕໍ່ລະບົບ Login ໄດ້ ກະລຸນາລອງໃໝ່');
+        return;
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
+    // Standalone file preview fallback. Production authentication is handled by D1.
     const user = usersList.find(
       (acc) => acc.username.toLowerCase() === username.trim().toLowerCase()
     );
@@ -150,7 +185,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                   className="block w-full pl-10 pr-8 py-2.5 border border-slate-300 rounded-xl leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-[#C5A059] focus:border-transparent sm:text-sm text-slate-900 font-medium cursor-pointer appearance-none"
                 >
                   <option value="" className="bg-white text-slate-900">-- ກະລຸນາເລືອກສາຂາ (Select Branch) --</option>
-                  {Array.from(new Set(usersList.map((acc) => acc.branch).filter(Boolean))).sort().map((b) => (
+                  {branchOptions.map((b) => (
                     <option key={b} value={b} className="bg-white text-slate-900">
                       {b}
                     </option>
@@ -165,10 +200,11 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
 
           <button
             type="submit"
+            disabled={isSubmitting}
             className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-[#050a14] bg-gradient-to-r from-[#C5A059] to-[#b38f4d] hover:from-[#d1ad66] hover:to-[#c5a059] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#C5A059] transition-all shadow-lg shadow-[#C5A059]/20"
           >
             <Shield className="h-5 w-5 mr-2 text-[#050a14]" />
-            ເຂົ້າສູ່ລະບົບ (Sign In)
+            {isSubmitting ? 'ກຳລັງກວດສອບ...' : 'ເຂົ້າສູ່ລະບົບ (Sign In)'}
           </button>
         </form>
 
