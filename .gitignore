@@ -2,6 +2,7 @@ node_modules/
 build/
 dist/
 coverage/
+.wrangler/
 .single-file-temp/
 release/
 .DS_Store
