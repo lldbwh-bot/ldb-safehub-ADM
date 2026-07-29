@@ -26,15 +26,40 @@ assert.match(
   'Login password reveal control must be accessible and intentional',
 );
 
-assert.doesNotMatch(
+assert.match(
   accountsSource,
-  /showPasswordMap|togglePasswordVisibility|canSeePassword\s*\?/,
-  'User Permissions must not contain a password reveal state or control',
+  /visiblePasswordUsers|visiblePasswordMap/,
+  'User Permissions must provide explicit per-user password visibility state',
+);
+assert.match(
+  accountsSource,
+  /canSeePassword\s*\?\s*\(user\.password_raw/,
+  'User Permissions may render the stored password only after the explicit eye toggle is enabled',
+);
+assert.match(
+  accountsSource,
+  /EyeOff[\s\S]{0,600}Eye/,
+  'User Permissions must render eye icons for show/hide password controls',
+);
+assert.match(
+  accountsSource,
+  /handleExportUsersExcel/,
+  'User Permissions must provide an export/download action for the filtered user list',
 );
 assert.doesNotMatch(
   accountsSource,
-  /\{\s*user\.password_raw\s*\}/,
-  'User Permissions must never render a stored password',
+  /password_raw:\s*user\.password_raw|Password['"]\s*:\s*user\.password_raw/,
+  'User export must not include raw passwords',
+);
+assert.match(
+  accountsSource,
+  /viewingUser|setViewingUser/,
+  'User Permissions must provide a user details view modal',
+);
+assert.match(
+  accountsSource,
+  /setImage\(user\.image\s*\|\|\s*''\)|user\.image\s*\?\s*<img/,
+  'User Permissions must support an optional user image/avatar',
 );
 assert.match(
   accountsSource,

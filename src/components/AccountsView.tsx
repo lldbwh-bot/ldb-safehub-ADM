@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { 
   Users, UserPlus, Trash2, Edit2, Shield, Check, X, 
   MapPin, ShieldAlert, Key, Lock, Save, CheckSquare,
-  Building, Search, PlusCircle, AlertCircle, RotateCcw, Wrench
+  Building, Search, PlusCircle, AlertCircle, RotateCcw, Wrench,
+  Eye, EyeOff, Download, UserCircle, Image as ImageIcon
 } from 'lucide-react';
 import { UserAccount, BranchInfo, ChecklistItem, SectorInfo, RepairPreset } from '../types';
 import { CHECKLIST_ITEMS, getSavedRepairPresets, saveRepairPresets, DEFAULT_REPAIR_PRESETS } from '../dataStore';
@@ -77,6 +79,7 @@ export default function AccountsView({
   const [editingIndex, setEditingIndex] = useState<number | null>(null); // null means adding a new user
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [image, setImage] = useState('');
   const [status, setStatus] = useState('User'); // 'Admin' | 'User'
   const [branch, setBranch] = useState(currentUser.branch);
   const [allowedTabs, setAllowedTabs] = useState<string[]>([
@@ -94,6 +97,8 @@ export default function AccountsView({
   // Custom non-blocking confirmations/messages
   const [deleteUserConfirm, setDeleteUserConfirm] = useState<UserAccount | null>(null);
   const [deleteBranchConfirm, setDeleteBranchConfirm] = useState<BranchInfo | null>(null);
+  const [visiblePasswordUsers, setVisiblePasswordUsers] = useState<Record<string, boolean>>({});
+  const [viewingUser, setViewingUser] = useState<UserAccount | null>(null);
   const [systemAlertMessage, setSystemAlertMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -110,6 +115,29 @@ export default function AccountsView({
     user.branch.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.status.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleExportUsersExcel = () => {
+    const rows = filteredUsers.map((user, index) => ({
+      'No.': index + 1,
+      'Username': user.username || '',
+      'Role': user.status || '',
+      'Branch': user.branch || '',
+      'Visible Tabs': (user.allowedTabs || []).join(', '),
+      'Has User Image': user.image ? 'Yes' : 'No',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Users');
+    XLSX.writeFile(workbook, `LDB_SafeHub_Users_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const togglePasswordVisibility = (targetUsername: string) => {
+    setVisiblePasswordUsers(prev => ({
+      ...prev,
+      [targetUsername]: !prev[targetUsername],
+    }));
+  };
 
   // Search filter for Branches/Divisions
   const filteredBranches = branches.filter(item => 
@@ -164,6 +192,7 @@ export default function AccountsView({
     setEditingIndex(null);
     setUsername('');
     setPassword('');
+    setImage('');
     setStatus('User');
     setBranch(uniqueBranches[0] || currentUser.branch);
     setAllowedTabs(['dashboard', 'pm', 'inspections', 'incidents', 'approvals', 'tracking', 'repairs']);
@@ -175,6 +204,7 @@ export default function AccountsView({
     setEditingIndex(globalIndex);
     setUsername(user.username);
     setPassword('');
+    setImage(user.image || '');
     setStatus(user.status);
     setBranch(user.branch || uniqueBranches[0] || currentUser.branch);
     setAllowedTabs(user.allowedTabs || (user.status === 'Admin' 
@@ -222,6 +252,7 @@ export default function AccountsView({
         (editingIndex !== null ? users[editingIndex].password_raw || '' : ''),
       status,
       branch,
+      image: image.trim(),
       allowedTabs
     };
 
@@ -724,8 +755,19 @@ export default function AccountsView({
                 className="w-full pl-9 pr-4 py-2 border border-slate-350 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
               />
             </div>
-            <div className="text-[11px] text-slate-500 font-mono shrink-0">
-              ສະແດງທັງໝົດ: <strong className="text-slate-800 font-bold">{filteredUsers.length}</strong> ບັນຊີ
+            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleExportUsersExcel}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100 transition cursor-pointer"
+                title="Download filtered user list as Excel"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export Users
+              </button>
+              <div className="text-[11px] text-slate-500 font-mono">
+                ສະແດງທັງໝົດ: <strong className="text-slate-800 font-bold">{filteredUsers.length}</strong> ບັນຊີ
+              </div>
             </div>
           </div>
 
@@ -747,6 +789,7 @@ export default function AccountsView({
                 {filteredUsers.map((user, idx) => {
                   const userIndexInMain = users.findIndex(u => u.username === user.username);
                   const isSelf = user.username === currentUser.username;
+                  const canSeePassword = Boolean(visiblePasswordUsers[user.username]);
                   const permissionsList = user.allowedTabs || (user.status === 'Admin' 
                     ? ['dashboard', 'pm', 'inspections', 'incidents', 'approvals', 'tracking', 'repairs', 'accounts']
                     : ['dashboard', 'pm', 'inspections', 'incidents', 'approvals', 'tracking', 'repairs']);
@@ -758,11 +801,19 @@ export default function AccountsView({
                       </td>
                       <td className="p-4">
                         <div className="flex items-center space-x-2.5">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                            user.status === 'Admin' ? 'bg-emerald-100 text-emerald-800 animate-pulse' : 'bg-slate-100 text-slate-800'
-                          }`}>
-                            {(user.username?.[0] || 'U').toUpperCase()}
-                          </div>
+                          {user.image ? (
+                            <img
+                              src={user.image}
+                              alt={`${user.username} avatar`}
+                              className="h-8 w-8 rounded-full object-cover border border-cyan-300/60 bg-slate-100"
+                            />
+                          ) : (
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                              user.status === 'Admin' ? 'bg-emerald-100 text-emerald-800 animate-pulse' : 'bg-slate-100 text-slate-800'
+                            }`}>
+                              {(user.username?.[0] || 'U').toUpperCase()}
+                            </div>
+                          )}
                           <div>
                             <span className="font-bold text-slate-900 flex items-center gap-1">
                               {user.username}
@@ -777,9 +828,18 @@ export default function AccountsView({
                       </td>
                       <td className="p-4">
                         <div className="flex items-center space-x-1 font-mono text-[11px]">
-                          <span className="bg-slate-100 px-2 py-1 rounded border border-slate-200 text-slate-800">
-                            ••••••••
+                          <span className="bg-slate-100 px-2 py-1 rounded border border-slate-200 text-slate-800 min-w-[72px] inline-block">
+                            {canSeePassword ? (user.password_raw || '—') : '••••••••'}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => togglePasswordVisibility(user.username)}
+                            className="p-1 rounded-lg text-slate-500 hover:text-cyan-700 hover:bg-cyan-50 transition cursor-pointer"
+                            aria-label={canSeePassword ? `Hide password for ${user.username}` : `Show password for ${user.username}`}
+                            title={canSeePassword ? 'ເຊື່ອງລະຫັດຜ່ານ' : 'ສະແດງລະຫັດຜ່ານ'}
+                          >
+                            {canSeePassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </button>
                         </div>
                       </td>
                       <td className="p-4">
@@ -822,6 +882,14 @@ export default function AccountsView({
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => setViewingUser(user)}
+                            className="p-1 px-2 border border-slate-200 hover:border-cyan-300 hover:bg-cyan-50 text-slate-650 hover:text-cyan-800 font-bold rounded-lg cursor-pointer transition flex items-center gap-1"
+                            title="ເບິ່ງລາຍລະອຽດ User"
+                          >
+                            <UserCircle className="h-3.5 w-3.5" />
+                            <span className="text-[10px]">ເບິ່ງ</span>
+                          </button>
                           <button
                             onClick={() => handleOpenEdit(user, userIndexInMain)}
                             className="p-1 px-2 border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-slate-650 hover:text-emerald-800 font-bold rounded-lg cursor-pointer transition flex items-center gap-1"
@@ -1783,6 +1851,29 @@ export default function AccountsView({
                   />
                 </div>
 
+                {/* Optional User Image */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    ຮູບ User (Optional Avatar URL)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-full bg-slate-100 border border-slate-250 flex items-center justify-center overflow-hidden shrink-0">
+                      {image ? (
+                        <img src={image} alt="User preview" className="h-full w-full object-cover" />
+                      ) : (
+                        <ImageIcon className="h-5 w-5 text-slate-400" />
+                      )}
+                    </div>
+                    <input
+                      type="url"
+                      value={image}
+                      onChange={(e) => setImage(e.target.value)}
+                      placeholder="https://... (ບໍ່ບັງຄັບ)"
+                      className="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800"
+                    />
+                  </div>
+                </div>
+
                 {/* Role Switch & Branch selection */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -1912,6 +2003,81 @@ export default function AccountsView({
               >
                 ຕົກລົງ (OK)
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Details View Modal */}
+      {viewingUser && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="relative bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden text-slate-850 animate-scale-up">
+            <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserCircle className="h-5 w-5 text-cyan-300" />
+                <h3 className="font-bold text-sm">ລາຍລະອຽດ User (User View)</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingUser(null)}
+                className="text-slate-300 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-4">
+                {viewingUser.image ? (
+                  <img
+                    src={viewingUser.image}
+                    alt={`${viewingUser.username} avatar`}
+                    className="h-16 w-16 rounded-full object-cover border border-cyan-300 shadow-sm"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-full bg-slate-100 border border-slate-250 flex items-center justify-center text-xl font-black text-slate-700">
+                    {(viewingUser.username?.[0] || 'U').toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="text-lg font-black text-slate-950">{viewingUser.username}</p>
+                  <p className="text-xs text-slate-500">{viewingUser.status === 'Admin' ? 'Admin' : 'Branch User'} · {viewingUser.branch || '-'}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="font-bold text-slate-500 mb-1">Password</p>
+                  <p className="font-mono text-slate-900">••••••••</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="font-bold text-slate-500 mb-1">User Image</p>
+                  <p className="font-semibold text-slate-900">{viewingUser.image ? 'Configured' : 'Not configured'}</p>
+                </div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="font-bold text-slate-500 mb-2 text-xs">Visible Tabs</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(viewingUser.allowedTabs || []).map(tabId => {
+                    const findTab = AVAILABLE_TABS.find(t => t.id === tabId);
+                    return (
+                      <span key={tabId} className="text-[10px] px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100 font-bold">
+                        ✅ {findTab ? findTab.label : tabId}
+                      </span>
+                    );
+                  })}
+                  {(!viewingUser.allowedTabs || viewingUser.allowedTabs.length === 0) && (
+                    <span className="text-[10px] text-slate-500">No custom tab permissions</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setViewingUser(null)}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2 px-5 rounded-xl cursor-pointer transition shadow-xs"
+                >
+                  ປິດ (Close)
+                </button>
+              </div>
             </div>
           </div>
         </div>
