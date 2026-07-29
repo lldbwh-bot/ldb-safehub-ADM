@@ -3,6 +3,7 @@ build/
 dist/
 coverage/
 .wrangler/
+.tmp/
 .single-file-temp/
 release/
 .DS_Store
