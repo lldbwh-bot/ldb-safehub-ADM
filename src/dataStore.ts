@@ -1098,7 +1098,7 @@ export function parseDateSafe(dateVal: any): Date {
 export function formatDateSafe(date: Date): string {
   const d = String(date.getDate()).padStart(2, "0");
   const m = String(date.getMonth() + 1).padStart(2, "0");
-  const y = String(date.getFullYear()).slice(-2);
+  const y = date.getFullYear();
   return `${d}/${m}/${y}`;
 }
 
@@ -1126,7 +1126,7 @@ export function formatExcelDate(val: any): string {
     const date = new Date((num - 25569) * 86400 * 1000);
     const d = String(date.getUTCDate()).padStart(2, "0");
     const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const y = String(date.getUTCFullYear()).slice(-2);
+    const y = date.getUTCFullYear();
     return `${d}/${m}/${y}`;
   }
 
@@ -1135,7 +1135,8 @@ export function formatExcelDate(val: any): string {
     const parts = str.split("/");
     const d = parts[0].padStart(2, "0");
     const m = parts[1].padStart(2, "0");
-    const y = parts[2].slice(-2).padStart(2, "0");
+    const yRaw = parseInt(parts[2], 10);
+    const y = parts[2].trim().length <= 2 ? 2000 + yRaw : yRaw;
     return `${d}/${m}/${y}`;
   }
 

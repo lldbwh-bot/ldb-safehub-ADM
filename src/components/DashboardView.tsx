@@ -1216,7 +1216,7 @@ export default function DashboardView({
                                   </span>
                                 </td>
                                 <td className="p-2.5 text-slate-400">{asset.maintenanceCycle}</td>
-                                <td className="p-2.5 font-bold text-slate-200">{asset.nextMaintenanceDate}</td>
+                                <td className="p-2.5 font-bold text-slate-200">{formatExcelDate(asset.nextMaintenanceDate)}</td>
                                 <td className="p-2.5 text-center">
                                   <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold ${
                                     isOverdue ? 'bg-rose-400/10 text-rose-200 ring-1 ring-rose-300/30' : 'bg-amber-400/10 text-amber-200 ring-1 ring-amber-300/30'

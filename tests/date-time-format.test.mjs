@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
@@ -30,6 +30,14 @@ Object.assign(globalThis, {
 });
 
 try {
+  const pmSource = await readFile(
+    join(process.cwd(), 'src/components/PreventiveMaintenanceView.tsx'),
+    'utf8',
+  );
+  const dashboardSource = await readFile(
+    join(process.cwd(), 'src/components/DashboardView.tsx'),
+    'utf8',
+  );
   const {
     formatDateSafe,
     formatExcelDate,
@@ -41,18 +49,23 @@ try {
 
   assert.equal(
     formatDateSafe(date),
-    '29/07/26',
-    'System display dates must use dd/mm/yy English/world format',
+    '29/07/2026',
+    'System display dates must use dd/mm/yyyy English/world format',
   );
   assert.equal(
     formatExcelDate('2026-07-29'),
-    '29/07/26',
-    'Export/display date formatter must normalize ISO dates to dd/mm/yy',
+    '29/07/2026',
+    'Export/display date formatter must normalize ISO dates to dd/mm/yyyy',
   );
   assert.equal(
     formatExcelDate('29/07/2026'),
-    '29/07/26',
-    'Existing dd/mm/yyyy dates must display as dd/mm/yy',
+    '29/07/2026',
+    'Existing dd/mm/yyyy dates must stay dd/mm/yyyy',
+  );
+  assert.equal(
+    formatExcelDate('29/07/26'),
+    '29/07/2026',
+    'Existing dd/mm/yy dates must expand to dd/mm/yyyy',
   );
   assert.equal(
     formatTimeSafe(date),
@@ -61,8 +74,23 @@ try {
   );
   assert.equal(
     formatDateTimeSafe(date),
-    '29/07/26 08:05:09',
-    'Combined timestamps must use dd/mm/yy plus 24-hour English/world time',
+    '29/07/2026 08:05:09',
+    'Combined timestamps must use dd/mm/yyyy plus 24-hour English/world time',
+  );
+  assert.match(
+    pmSource,
+    /formatExcelDate\(asset\.lastMaintenanceDate\)/,
+    'PM asset table must display Last PM Date through the regional date formatter',
+  );
+  assert.match(
+    pmSource,
+    /formatExcelDate\(asset\.nextMaintenanceDate\)/,
+    'PM asset table must display Next PM Date through the regional date formatter',
+  );
+  assert.match(
+    dashboardSource,
+    /formatExcelDate\(asset\.nextMaintenanceDate\)/,
+    'Dashboard PM due table must display Next PM Date through the regional date formatter',
   );
 
   console.log('Date/time regional format checks passed.');

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PMAsset, PMHistoryRecord, UserAccount, IncidentRecord } from '../types';
-import { getSavedBranches, getSavedSectors, cleanString, addCycleToDate, ASSET_CATEGORIES, getSavedChecklistItems, getSavedPMAssets, savePMAssets, savePMHistory } from '../dataStore';
+import { getSavedBranches, getSavedSectors, cleanString, addCycleToDate, ASSET_CATEGORIES, getSavedChecklistItems, getSavedPMAssets, savePMAssets, savePMHistory, formatExcelDate } from '../dataStore';
 import { LOCATION_FLOOR_LABEL, LOCATION_FLOOR_OPTIONS } from '../locationFloorOptions';
 import {
   buildPMAssetExportRow,
@@ -1008,8 +1008,8 @@ export default function PreventiveMaintenanceView({
                           <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">{asset.division} • {formatSectorForDisplay(asset.sector)}</p>
                         </td>
                         <td className="p-4 font-semibold text-slate-600">{asset.maintenanceCycle}</td>
-                        <td className="p-4 text-center font-mono text-slate-500">{asset.lastMaintenanceDate || "—"}</td>
-                        <td className="p-4 text-center font-mono font-bold text-slate-800">{asset.nextMaintenanceDate || "—"}</td>
+                        <td className="p-4 text-center font-mono text-slate-500">{asset.lastMaintenanceDate ? formatExcelDate(asset.lastMaintenanceDate) : "—"}</td>
+                        <td className="p-4 text-center font-mono font-bold text-slate-800">{asset.nextMaintenanceDate ? formatExcelDate(asset.nextMaintenanceDate) : "—"}</td>
                         <td className="p-4 text-center">
                           <span className={`inline-block px-2 py-1 rounded-lg border text-[10px] font-extrabold ${statusColor}`}>
                             {asset.maintenanceStatus}
@@ -1140,7 +1140,7 @@ export default function PreventiveMaintenanceView({
                       <div className="flex items-center space-x-4 self-end sm:self-auto">
                         <div className="text-right">
                           <p className="text-[10px] font-semibold text-slate-400 uppercase">ກຳນົດວັນທີ</p>
-                          <p className="font-mono text-xs font-black text-slate-800 mt-0.5">{asset.nextMaintenanceDate}</p>
+                          <p className="font-mono text-xs font-black text-slate-800 mt-0.5">{formatExcelDate(asset.nextMaintenanceDate)}</p>
                           <span className={`inline-block mt-1 px-1.5 py-0.5 rounded border text-[9px] font-black ${alertBadge}`}>
                             {asset.maintenanceStatus}
                           </span>
@@ -1681,7 +1681,7 @@ export default function PreventiveMaintenanceView({
                 </div>
                 <div>
                   <p className="text-slate-400 font-bold">ວັນທີ PM ຫຼ້າສຸດ:</p>
-                  <p className="font-semibold text-slate-800 mt-0.5 font-mono">{selectedAssetForCheck.lastMaintenanceDate}</p>
+                  <p className="font-semibold text-slate-800 mt-0.5 font-mono">{formatExcelDate(selectedAssetForCheck.lastMaintenanceDate)}</p>
                 </div>
               </div>
 
