@@ -29,8 +29,7 @@ import {
   getSavedAssessments,
   saveAssessments,
   getSavedPMAssets,
-  getSavedPMHistory,
-  getSavedRepairPresets
+  getSavedPMHistory
 } from './dataStore';
 import {
   clearApiToken,
@@ -40,7 +39,6 @@ import {
   logoutCentral,
 } from './apiClient';
 import {
-  initializeCentralData,
   pullCentralData,
 } from './centralDataStore';
 
@@ -381,24 +379,10 @@ export default function App() {
     setSelectedBranch(user.status !== "Admin" ? user.branch : "ALL");
 
     if (isCentralApiAvailable()) {
-      const snapshot = {
-        inspections: getSavedInspections(),
-        incidents: getSavedIncidents(),
-        assessments: getSavedAssessments(),
-        approvals: getSavedApprovals(),
-        "repair-tracking": getSavedRepairTracking(),
-        repairs: getSavedRepairs(),
-        "pm-assets": getSavedPMAssets(),
-        "pm-history": getSavedPMHistory(),
-        branches: getSavedBranches(),
-        "checklist-items": getSavedChecklistItems(),
-        sectors: getSavedSectors(),
-        "repair-presets": getSavedRepairPresets(),
-      };
       try {
-        await initializeCentralData(snapshot as any);
+        await pullCentralData();
       } catch (error) {
-        console.error("Initial browser-to-D1 migration failed", error);
+        console.error("Initial D1-to-browser refresh failed", error);
       }
     }
 
