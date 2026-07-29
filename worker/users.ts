@@ -24,7 +24,9 @@ export const handleUsers = async (
     const result = await env.DB.prepare(
       `SELECT username, password_raw, status, branch, image, allowed_tabs_json, active,
               created_at, updated_at
-         FROM app_users ORDER BY branch, username`,
+         FROM app_users
+        WHERE active = 1
+        ORDER BY branch, username`,
     ).all<{
       username: string;
       password_raw: string | null;

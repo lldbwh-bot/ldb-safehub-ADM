@@ -626,6 +626,13 @@ describe('LDB SafeHub Worker API', () => {
       .bind('test.user')
       .first<{ active: number }>();
     expect(deleted?.active).toBe(0);
+
+    const listAfterDelete = await SELF.fetch('https://example.com/api/users', {
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(listAfterDelete.status).toBe(200);
+    const listBody = await listAfterDelete.json<{ users: Array<{ username: string }> }>();
+    expect(listBody.users.map((user) => user.username)).not.toContain('Test.User');
   });
 });
 
