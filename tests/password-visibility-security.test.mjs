@@ -33,8 +33,18 @@ assert.match(
 );
 assert.match(
   accountsSource,
-  /canSeePassword\s*\?\s*\(user\.password_raw/,
-  'User Permissions may render the stored password only after the explicit eye toggle is enabled',
+  /canSeePassword\s*\?\s*getVisiblePasswordValue\(user\)/,
+  'User Permissions may render the stored password only after the explicit password toggle is enabled',
+);
+assert.match(
+  accountsSource,
+  /getStoredPasswordValue[\s\S]{0,500}password_raw[\s\S]{0,500}passwordRaw[\s\S]{0,500}\.password/,
+  'Password reveal must read stored password values robustly across local/demo/API user shapes',
+);
+assert.match(
+  accountsSource,
+  /canSeePassword\s*\?\s*'ປິດ'\s*:\s*'ເບິ່ງ'/,
+  'Password reveal control must include clear Lao text labels, not only a tiny icon',
 );
 assert.match(
   accountsSource,

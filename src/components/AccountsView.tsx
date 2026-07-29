@@ -139,6 +139,20 @@ export default function AccountsView({
     }));
   };
 
+  const getStoredPasswordValue = (user: UserAccount) => {
+    const passwordValue =
+      user.password_raw ||
+      (user as UserAccount & { passwordRaw?: string }).passwordRaw ||
+      (user as UserAccount & { password?: string }).password ||
+      '';
+
+    return String(passwordValue).trim();
+  };
+
+  const getVisiblePasswordValue = (user: UserAccount) => (
+    getStoredPasswordValue(user) || 'ບໍ່ມີລະຫັດ'
+  );
+
   // Search filter for Branches/Divisions
   const filteredBranches = branches.filter(item => 
     item.ສາຂາ.toLowerCase().includes(branchSearchTerm.toLowerCase()) ||
@@ -827,18 +841,27 @@ export default function AccountsView({
                         </div>
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center space-x-1 font-mono text-[11px]">
-                          <span className="bg-slate-100 px-2 py-1 rounded border border-slate-200 text-slate-800 min-w-[72px] inline-block">
-                            {canSeePassword ? (user.password_raw || '—') : '••••••••'}
+                        <div className="flex items-center gap-2 font-mono text-[11px]">
+                          <span className={`px-2 py-1 rounded border min-w-[82px] inline-block ${
+                            canSeePassword
+                              ? 'bg-amber-100 border-amber-300 text-amber-950'
+                              : 'bg-slate-950 border-cyan-900/70 text-slate-100'
+                          }`}>
+                            {canSeePassword ? getVisiblePasswordValue(user) : '••••••••'}
                           </span>
                           <button
                             type="button"
                             onClick={() => togglePasswordVisibility(user.username)}
-                            className="p-1 rounded-lg text-slate-500 hover:text-cyan-700 hover:bg-cyan-50 transition cursor-pointer"
+                            className={`inline-flex min-w-[64px] items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-bold transition cursor-pointer ${
+                              canSeePassword
+                                ? 'border-amber-300 bg-amber-500/20 text-amber-100 hover:bg-amber-500/30'
+                                : 'border-cyan-500/40 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/20'
+                            }`}
                             aria-label={canSeePassword ? `Hide password for ${user.username}` : `Show password for ${user.username}`}
                             title={canSeePassword ? 'ເຊື່ອງລະຫັດຜ່ານ' : 'ສະແດງລະຫັດຜ່ານ'}
                           >
                             {canSeePassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            <span>{canSeePassword ? 'ປິດ' : 'ເບິ່ງ'}</span>
                           </button>
                         </div>
                       </td>
