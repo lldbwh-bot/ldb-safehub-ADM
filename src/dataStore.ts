@@ -6,6 +6,7 @@
 import accountsData from './data/ ACCOUNT.json';
 import repairMappingMasterData from './repairMappingMasterData.json';
 import { queueCentralSnapshot, queueCentralUsers } from './centralDataStore';
+import { isDemoPreviewHost } from './apiClient';
 import checklistData from './data/checklistitem.json';
 import appSheetMappingData from './data/AppSheet_Mapping.json';
 import branchData from './data/ສາຂາ.json';
@@ -226,6 +227,7 @@ export const CHECKLIST_ITEMS: ChecklistItem[] = (() => {
 })();
 
 export function getSavedChecklistItems(): ChecklistItem[] {
+  ensureDemoPreviewSeedData();
   const local = localStorage.getItem("ldb_checklist_items_v10");
   if (local) {
     try {
@@ -253,6 +255,7 @@ export const BRANCHES: BranchInfo[] = branchData.map((item: any) => ({
 })).filter(b => b.ສາຂາ !== "");
 
 export function getSavedBranches(): BranchInfo[] {
+  ensureDemoPreviewSeedData();
   const local = localStorage.getItem("ldb_branches");
   if (local) {
     try {
@@ -289,6 +292,7 @@ export const SECTORS: SectorInfo[] = [
 ];
 
 export function getSavedSectors(): SectorInfo[] {
+  ensureDemoPreviewSeedData();
   const local = localStorage.getItem("ldb_sectors");
   if (local) {
     try {
@@ -806,6 +810,7 @@ export function saveRepairs(list: RepairLogRecord[]) {
 }
 
 export function getSavedUsers(): UserAccount[] {
+  ensureDemoPreviewSeedData();
   const local = localStorage.getItem("ldb_users");
   if (local) {
     try {
@@ -1313,6 +1318,7 @@ const DEFAULT_PM_ASSETS: PMAsset[] = [
 ];
 
 export function getSavedPMAssets(): PMAsset[] {
+  ensureDemoPreviewSeedData();
   const isBaseCleared = localStorage.getItem("ldb_base_data_cleared") === "true";
   const local = localStorage.getItem("ldb_pm_assets");
   let assets: PMAsset[] = [];
@@ -1871,7 +1877,82 @@ export const DEFAULT_REPAIR_PRESETS: RepairPreset[] = repairMappingMasterData.ma
 
 void LEGACY_REPAIR_PRESETS;
 
+const DEMO_PREVIEW_SEED_KEY = 'ldb_demo_preview_seed_v1';
+const ALL_FUNCTION_TABS = [
+  "dashboard",
+  "pm",
+  "inspections",
+  "incidents",
+  "assessment",
+  "approvals",
+  "tracking",
+  "repairs",
+  "accounts",
+] as const;
+
+const isDemoPreviewRuntime = (): boolean => {
+  try {
+    return typeof window !== 'undefined' && isDemoPreviewHost(window.location.hostname);
+  } catch {
+    return false;
+  }
+};
+
+const pickBranch = (prefix: string, fallbackIndex: number): string =>
+  BRANCHES.find((item) => String((item as any)["àºªàº²àº‚àº²"] || '').startsWith(prefix))?.["àºªàº²àº‚àº²"]
+  || BRANCHES[fallbackIndex]?.["àºªàº²àº‚àº²"]
+  || BRANCHES[0]?.["àºªàº²àº‚àº²"]
+  || '';
+
+const buildDemoPreviewUsers = (): UserAccount[] => {
+  const hqBranch = pickBranch('00.', 0);
+  const branchUser = pickBranch('01.', 1);
+  const uatBranchUser = pickBranch('23.', 23);
+  return [
+    {
+      username: 'demo_admin',
+      password_raw: 'UAT-DEMO-ONLY',
+      status: 'Admin',
+      branch: hqBranch,
+      image: '',
+      allowedTabs: [...ALL_FUNCTION_TABS],
+    },
+    {
+      username: 'demo_branch',
+      password_raw: '1122',
+      status: 'User',
+      branch: branchUser,
+      image: '',
+      allowedTabs: ALL_FUNCTION_TABS.filter((tab) => tab !== 'accounts'),
+    },
+    {
+      username: 'demo_uat',
+      password_raw: '1122',
+      status: 'User',
+      branch: uatBranchUser,
+      image: '',
+      allowedTabs: ALL_FUNCTION_TABS.filter((tab) => tab !== 'accounts'),
+    },
+  ];
+};
+
+export function ensureDemoPreviewSeedData(): void {
+  if (!isDemoPreviewRuntime()) return;
+  if (localStorage.getItem(DEMO_PREVIEW_SEED_KEY) === 'true') return;
+
+  localStorage.setItem("ldb_users", JSON.stringify(buildDemoPreviewUsers()));
+  localStorage.setItem("ldb_branches", JSON.stringify(BRANCHES));
+  localStorage.setItem("ldb_checklist_items_v10", JSON.stringify(CHECKLIST_ITEMS));
+  localStorage.setItem("ldb_sectors", JSON.stringify(SECTORS));
+  localStorage.setItem("ldb_repair_presets_v3", JSON.stringify(DEFAULT_REPAIR_PRESETS));
+  localStorage.setItem("ldb_pm_assets", JSON.stringify(DEFAULT_PM_ASSETS));
+  localStorage.removeItem("ldb_base_data_cleared");
+  localStorage.removeItem("ldb_current_user");
+  localStorage.setItem(DEMO_PREVIEW_SEED_KEY, 'true');
+}
+
 export function getSavedRepairPresets(): RepairPreset[] {
+  ensureDemoPreviewSeedData();
   const local = localStorage.getItem("ldb_repair_presets_v3");
   if (local) {
     try {
