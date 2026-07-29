@@ -13,7 +13,7 @@ import {
   AlertCircle, User, Check, RefreshCw, Shield, Activity, Filter, Award
 } from 'lucide-react';
 import { InspectionRecord, IncidentRecord, RepairAssessmentRecord, RepairApprovalRecord, RepairLogRecord, RepairTrackingRecord, UserAccount, BranchInfo, PMAsset, PMHistoryRecord } from '../types';
-import { formatExcelDate, cleanString, parseDateSafe } from '../dataStore';
+import { formatExcelDate, cleanString, parseDateSafe, formatTimeSafe } from '../dataStore';
 import { buildDashboardMetrics, getDashboardRecordBranch, getDashboardRecordDate } from '../dashboardMetrics';
 import DashboardOverview from './dashboard/DashboardOverview';
 import BranchIntelligence from './dashboard/BranchIntelligence';
@@ -230,7 +230,7 @@ export default function DashboardView({
   // Auto Refresh countdown (30s)
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
   const [secondsToRefresh, setSecondsToRefresh] = useState(30);
-  const [lastRefreshedTime, setLastRefreshedTime] = useState(new Date().toLocaleTimeString('la-LA', { hour12: false }));
+  const [lastRefreshedTime, setLastRefreshedTime] = useState(formatTimeSafe(new Date()));
 
   // Approval Modal States
   const [isApproveOpen, setIsApproveOpen] = useState(false);
@@ -413,14 +413,14 @@ export default function DashboardView({
   useEffect(() => {
     if (secondsToRefresh === 0) {
       if (onRefreshData) onRefreshData();
-      setLastRefreshedTime(new Date().toLocaleTimeString('la-LA', { hour12: false }));
+      setLastRefreshedTime(formatTimeSafe(new Date()));
       setSecondsToRefresh(30);
     }
   }, [secondsToRefresh, onRefreshData]);
 
   const triggerManualRefresh = () => {
     if (onRefreshData) onRefreshData();
-    setLastRefreshedTime(new Date().toLocaleTimeString('la-LA', { hour12: false }));
+    setLastRefreshedTime(formatTimeSafe(new Date()));
     setSecondsToRefresh(30);
   };
 

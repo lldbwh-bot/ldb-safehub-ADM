@@ -16,7 +16,7 @@ import {
   PieChart, Pie, Cell, CartesianGrid
 } from 'recharts';
 import { RepairTrackingRecord, UserAccount, RepairLogRecord } from '../types';
-import { formatLAK, formatExcelDate, calculateSLAStatus, parseDateSafe, formatDateSafe } from '../dataStore';
+import { formatLAK, formatExcelDate, calculateSLAStatus, parseDateSafe, formatDateSafe, formatTimeSafe } from '../dataStore';
 
 interface RepairTrackingViewProps {
   trackingList: RepairTrackingRecord[];
@@ -56,7 +56,7 @@ export default function RepairTrackingView({
   // Auto Refresh State
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
   const [secondsToRefresh, setSecondsToRefresh] = useState(10);
-  const [lastRefreshedTime, setLastRefreshedTime] = useState(new Date().toLocaleTimeString('la-LA', { hour12: false }));
+  const [lastRefreshedTime, setLastRefreshedTime] = useState(formatTimeSafe(new Date()));
 
   // Auto Refresh countdown
   React.useEffect(() => {
@@ -75,7 +75,7 @@ export default function RepairTrackingView({
       if (onRefreshData) {
         onRefreshData();
       }
-      setLastRefreshedTime(new Date().toLocaleTimeString('la-LA', { hour12: false }));
+      setLastRefreshedTime(formatTimeSafe(new Date()));
       setSecondsToRefresh(10);
     }
   }, [secondsToRefresh, onRefreshData]);
@@ -85,7 +85,7 @@ export default function RepairTrackingView({
     if (onRefreshData) {
       onRefreshData();
     }
-    setLastRefreshedTime(new Date().toLocaleTimeString('la-LA', { hour12: false }));
+    setLastRefreshedTime(formatTimeSafe(new Date()));
     setSecondsToRefresh(10);
   };
 

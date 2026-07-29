@@ -1055,13 +1055,14 @@ export function parseDateSafe(dateVal: any): Date {
   const str = String(dateVal).trim();
   if (!str) return new Date();
   
-  // Try DD/MM/YYYY
+  // Try DD/MM/YYYY or DD/MM/YY
   if (str.includes("/")) {
     const parts = str.split("/");
     if (parts.length === 3) {
       const d = parseInt(parts[0], 10);
       const m = parseInt(parts[1], 10) - 1;
-      const y = parseInt(parts[2], 10);
+      const yRaw = parseInt(parts[2], 10);
+      const y = parts[2].trim().length <= 2 ? 2000 + yRaw : yRaw;
       const parsed = new Date(y, m, d);
       if (!isNaN(parsed.getTime())) return parsed;
     }
@@ -1080,7 +1081,8 @@ export function parseDateSafe(dateVal: any): Date {
       } else {
         const d = parseInt(parts[0], 10);
         const m = parseInt(parts[1], 10) - 1;
-        const y = parseInt(parts[2], 10);
+        const yRaw = parseInt(parts[2], 10);
+        const y = parts[2].trim().length <= 2 ? 2000 + yRaw : yRaw;
         const parsed = new Date(y, m, d);
         if (!isNaN(parsed.getTime())) return parsed;
       }
@@ -1094,10 +1096,23 @@ export function parseDateSafe(dateVal: any): Date {
 }
 
 export function formatDateSafe(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const y = String(date.getFullYear()).slice(-2);
+  return `${d}/${m}/${y}`;
+}
+
+export function formatTimeSafe(date: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+export function formatDateTimeSafe(date: Date = new Date()): string {
+  return `${formatDateSafe(date)} ${formatTimeSafe(date)}`;
 }
 
 export function formatExcelDate(val: any): string {
@@ -1111,26 +1126,23 @@ export function formatExcelDate(val: any): string {
     const date = new Date((num - 25569) * 86400 * 1000);
     const d = String(date.getUTCDate()).padStart(2, "0");
     const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const y = date.getUTCFullYear();
+    const y = String(date.getUTCFullYear()).slice(-2);
     return `${d}/${m}/${y}`;
   }
 
-  // 2. If it's already in DD/MM/YYYY format, return it
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+  // 2. If it's already in DD/MM/YYYY or DD/MM/YY format, normalize it
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(str)) {
     const parts = str.split("/");
     const d = parts[0].padStart(2, "0");
     const m = parts[1].padStart(2, "0");
-    const y = parts[2];
+    const y = parts[2].slice(-2).padStart(2, "0");
     return `${d}/${m}/${y}`;
   }
 
-  // 3. Otherwise, parse it safely and format as DD/MM/YYYY
+  // 3. Otherwise, parse it safely and format as DD/MM/YY
   const date = parseDateSafe(str);
   if (!isNaN(date.getTime())) {
-    const d = String(date.getDate()).padStart(2, "0");
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const y = date.getFullYear();
-    return `${d}/${m}/${y}`;
+    return formatDateSafe(date);
   }
 
   return str;
