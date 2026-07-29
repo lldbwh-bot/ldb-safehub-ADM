@@ -33,7 +33,9 @@ import {
   getSavedRepairPresets
 } from './dataStore';
 import {
+  clearApiToken,
   getApiToken,
+  getCentralCurrentUser,
   isCentralApiAvailable,
   logoutCentral,
 } from './apiClient';
@@ -137,7 +139,10 @@ const getCleanedIncidents = (rawIncidents: IncidentRecord[], currentAssessments:
 export default function App() {
   // Session State
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
-    if (isCentralApiAvailable() && !getApiToken()) return null;
+    if (isCentralApiAvailable() && !getApiToken()) {
+      localStorage.removeItem("ldb_current_user");
+      return null;
+    }
     const stored = localStorage.getItem("ldb_current_user");
     if (!stored) return null;
     try {
@@ -196,76 +201,99 @@ export default function App() {
   // Load from merged datastore on first mount or when user changes
   useEffect(() => {
     // 1. Fetch current session if exists
-    const storedUser = localStorage.getItem("ldb_current_user");
-    if (storedUser) {
+    const hydrateUserSession = (u: UserAccount | null) => {
+      if (!u) {
+        setCurrentUser(null);
+        return;
+      }
+      let userMigrated = false;
+      if (u.allowedTabs) {
+        if (!u.allowedTabs.includes("tracking")) {
+          userMigrated = true;
+          const idx = u.allowedTabs.indexOf("repairs");
+          const newTabs = [...u.allowedTabs];
+          if (idx !== -1) {
+            newTabs.splice(idx, 0, "tracking");
+          } else {
+            newTabs.push("tracking");
+          }
+          u.allowedTabs = newTabs;
+        }
+        if (!u.allowedTabs.includes("pm")) {
+          userMigrated = true;
+          const idx = u.allowedTabs.indexOf("inspections");
+          const newTabs = [...u.allowedTabs];
+          if (idx !== -1) {
+            newTabs.splice(idx, 0, "pm");
+          } else {
+            const idxInc = u.allowedTabs.indexOf("incidents");
+            if (idxInc !== -1) {
+              newTabs.splice(idxInc, 0, "pm");
+            } else {
+              newTabs.push("pm");
+            }
+          }
+          u.allowedTabs = newTabs;
+        }
+        if (!u.allowedTabs.includes("assessment")) {
+          userMigrated = true;
+          const idxInc = u.allowedTabs.indexOf("incidents");
+          const newTabs = [...u.allowedTabs];
+          if (idxInc !== -1) {
+            newTabs.splice(idxInc + 1, 0, "assessment");
+          } else {
+            newTabs.push("assessment");
+          }
+          u.allowedTabs = newTabs;
+        }
+        
+        // Ensure correct ordering where pm is placed before inspections
+        const idxPm = u.allowedTabs.indexOf("pm");
+        const idxIns = u.allowedTabs.indexOf("inspections");
+        if (idxPm !== -1 && idxIns !== -1 && idxPm > idxIns) {
+          userMigrated = true;
+          const sortedTabs = [...u.allowedTabs];
+          sortedTabs.splice(idxPm, 1);
+          const newIdxIns = sortedTabs.indexOf("inspections");
+          sortedTabs.splice(newIdxIns, 0, "pm");
+          u.allowedTabs = sortedTabs;
+        }
+        if (userMigrated) {
+          localStorage.setItem("ldb_current_user", JSON.stringify(u));
+        }
+      }
+      setCurrentUser(u);
+      if (u.status !== "Admin") {
+        setSelectedBranch(u.branch || "");
+      }
+    };
+
+    if (isCentralApiAvailable()) {
+      if (!getApiToken()) {
+        localStorage.removeItem("ldb_current_user");
+        setCurrentUser(null);
+      } else {
+        void getCentralCurrentUser()
+          .then((u) => {
+            localStorage.setItem("ldb_current_user", JSON.stringify(u));
+            hydrateUserSession(u);
+          })
+          .catch((error) => {
+            console.error("Central session restore failed", error);
+            localStorage.removeItem("ldb_current_user");
+            clearApiToken();
+            setCurrentUser(null);
+          });
+      }
+    } else {
+      const storedUser = localStorage.getItem("ldb_current_user");
+      if (storedUser) {
       try {
         const u = JSON.parse(storedUser);
-        let userMigrated = false;
-        if (u && u.allowedTabs) {
-          if (!u.allowedTabs.includes("tracking")) {
-            userMigrated = true;
-            const idx = u.allowedTabs.indexOf("repairs");
-            const newTabs = [...u.allowedTabs];
-            if (idx !== -1) {
-              newTabs.splice(idx, 0, "tracking");
-            } else {
-              newTabs.push("tracking");
-            }
-            u.allowedTabs = newTabs;
-          }
-          if (!u.allowedTabs.includes("pm")) {
-            userMigrated = true;
-            const idx = u.allowedTabs.indexOf("inspections");
-            const newTabs = [...u.allowedTabs];
-            if (idx !== -1) {
-              newTabs.splice(idx, 0, "pm");
-            } else {
-              const idxInc = u.allowedTabs.indexOf("incidents");
-              if (idxInc !== -1) {
-                newTabs.splice(idxInc, 0, "pm");
-              } else {
-                newTabs.push("pm");
-              }
-            }
-            u.allowedTabs = newTabs;
-          }
-          if (!u.allowedTabs.includes("assessment")) {
-            userMigrated = true;
-            const idxInc = u.allowedTabs.indexOf("incidents");
-            const newTabs = [...u.allowedTabs];
-            if (idxInc !== -1) {
-              newTabs.splice(idxInc + 1, 0, "assessment");
-            } else {
-              newTabs.push("assessment");
-            }
-            u.allowedTabs = newTabs;
-          }
-          
-          // Ensure correct ordering where pm is placed before inspections
-          const idxPm = u.allowedTabs.indexOf("pm");
-          const idxIns = u.allowedTabs.indexOf("inspections");
-          if (idxPm !== -1 && idxIns !== -1 && idxPm > idxIns) {
-            userMigrated = true;
-            const sortedTabs = [...u.allowedTabs];
-            sortedTabs.splice(idxPm, 1);
-            const newIdxIns = sortedTabs.indexOf("inspections");
-            sortedTabs.splice(newIdxIns, 0, "pm");
-            u.allowedTabs = sortedTabs;
-          }
-          if (userMigrated) {
-            localStorage.setItem("ldb_current_user", JSON.stringify(u));
-          }
-        }
-        if (u) {
-          setCurrentUser(u);
-          if (u.status !== "Admin") {
-            setSelectedBranch(u.branch || "");
-          }
-        } else {
-          setCurrentUser(null);
-        }
+        hydrateUserSession(u);
       } catch (e) {
         console.error("Failed to parse user session", e);
+      }
       }
     }
 

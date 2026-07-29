@@ -97,12 +97,34 @@ try {
   assert.equal(
     passwordInput.type,
     'password',
-    'the login password must always remain masked',
+    'the login password must be masked by default',
   );
+  const passwordToggle = passwordInput.parentElement.querySelector('button[aria-label]');
+  assert.ok(
+    passwordToggle,
+    'the login form provides an explicit password eye toggle',
+  );
+  assert.match(
+    passwordToggle.getAttribute('aria-label'),
+    /ສະແດງລະຫັດຜ່ານ/,
+    'the password eye toggle starts in show-password mode',
+  );
+  await act(async () => {
+    passwordToggle.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  });
+  assert.equal(passwordInput.type, 'text', 'clicking the eye toggle reveals the password');
+  assert.match(
+    passwordToggle.getAttribute('aria-label'),
+    /ເຊື່ອງລະຫັດຜ່ານ/,
+    'the password eye toggle announces hide-password mode after reveal',
+  );
+  await act(async () => {
+    passwordToggle.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  });
   assert.equal(
-    passwordInput.parentElement.querySelector('button'),
-    null,
-    'the login form must not provide a password reveal control',
+    passwordInput.type,
+    'password',
+    'clicking the eye toggle again masks the password',
   );
   const branchSelect = rootElement.querySelector('select');
   const branchValue = [...branchSelect.options]

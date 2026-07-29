@@ -15,15 +15,15 @@ const globalStyles = await readFile(
   'utf8',
 );
 
-assert.doesNotMatch(
+assert.match(
   loginSource,
-  /\bshowPassword\b|setShowPassword|EyeOff/,
-  'Login must not contain a password reveal state or control',
+  /\bshowPassword\b[\s\S]*type=\{showPassword\s*\?\s*['"]text['"]\s*:\s*['"]password['"]\}/,
+  'Login password input must be masked by default and reveal only through the explicit eye toggle',
 );
 assert.match(
   loginSource,
-  /type="password"/,
-  'Login password input must always be masked',
+  /aria-label=\{showPassword[\s\S]{0,220}ສະແດງລະຫັດຜ່ານ/,
+  'Login password reveal control must be accessible and intentional',
 );
 
 assert.doesNotMatch(
@@ -43,7 +43,7 @@ assert.match(
 );
 assert.match(
   accountsSource,
-  /type="password"[\s\S]{0,180}autoComplete="new-password"/,
+  /type="password"[\s\S]{0,260}autoComplete="new-password"/,
   'Account password changes must use a masked input',
 );
 assert.match(

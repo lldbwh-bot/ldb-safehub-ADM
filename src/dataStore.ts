@@ -1321,11 +1321,10 @@ export function getSavedPMAssets(): PMAsset[] {
       assets = JSON.parse(local);
     } catch (e) {
       console.error("Failed to parse PM Assets", e);
-      assets = isBaseCleared ? [] : DEFAULT_PM_ASSETS;
+      assets = [];
     }
   } else {
-    assets = isBaseCleared ? [] : DEFAULT_PM_ASSETS;
-    localStorage.setItem("ldb_pm_assets", JSON.stringify(assets));
+    assets = [];
   }
   
   // Recalculate status dynamically based on current date

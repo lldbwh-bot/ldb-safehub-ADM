@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PMAsset, PMHistoryRecord, UserAccount, IncidentRecord } from '../types';
-import { getSavedBranches, getSavedSectors, cleanString, addCycleToDate, ASSET_CATEGORIES, getSavedChecklistItems, getSavedPMAssets } from '../dataStore';
+import { getSavedBranches, getSavedSectors, cleanString, addCycleToDate, ASSET_CATEGORIES, getSavedChecklistItems, getSavedPMAssets, savePMAssets, savePMHistory } from '../dataStore';
 import { LOCATION_FLOOR_LABEL, LOCATION_FLOOR_OPTIONS } from '../locationFloorOptions';
 import {
   buildPMAssetExportRow,
@@ -109,12 +109,12 @@ export default function PreventiveMaintenanceView({
   // Save changes to localStorage helper
   const updatePmAssetsState = (newAssets: PMAsset[]) => {
     setPmAssets(newAssets);
-    localStorage.setItem("ldb_pm_assets", JSON.stringify(newAssets));
+    savePMAssets(newAssets);
   };
 
   const updatePmHistoryState = (newHistory: PMHistoryRecord[]) => {
     setPmHistory(newHistory);
-    localStorage.setItem("ldb_pm_history", JSON.stringify(newHistory));
+    savePMHistory(newHistory);
   };
 
   // -----------------------------------------------------

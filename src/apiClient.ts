@@ -76,6 +76,13 @@ export const loginCentral = async (
   return result;
 };
 
+export const getCentralCurrentUser = async (): Promise<UserAccount> => {
+  const result = await apiRequest<{
+    user: UserAccount;
+  }>('/api/auth/me');
+  return result.user;
+};
+
 export const logoutCentral = async (): Promise<void> => {
   try {
     if (getApiToken()) {
