@@ -245,7 +245,7 @@ export function getSavedChecklistItems(): ChecklistItem[] {
 
 export function saveChecklistItems(list: ChecklistItem[]) {
   localStorage.setItem("ldb_checklist_items_v10", JSON.stringify(list));
-  queueCentralSnapshot("checklist-items", list as unknown as Record<string, unknown>[]);
+  return queueCentralSnapshot("checklist-items", list as unknown as Record<string, unknown>[]);
 }
 
 export const BRANCHES: BranchInfo[] = branchData.map((item: any) => ({
@@ -270,7 +270,7 @@ export function getSavedBranches(): BranchInfo[] {
 
 export function saveBranches(list: BranchInfo[]) {
   localStorage.setItem("ldb_branches", JSON.stringify(list));
-  queueCentralSnapshot("branches", list as unknown as Record<string, unknown>[]);
+  return queueCentralSnapshot("branches", list as unknown as Record<string, unknown>[]);
 }
 
 const rawSectors = sectorData.map((item: any) => ({
@@ -307,7 +307,7 @@ export function getSavedSectors(): SectorInfo[] {
 
 export function saveSectors(list: SectorInfo[]) {
   localStorage.setItem("ldb_sectors", JSON.stringify(list));
-  queueCentralSnapshot("sectors", list as unknown as Record<string, unknown>[]);
+  return queueCentralSnapshot("sectors", list as unknown as Record<string, unknown>[]);
 }
 
 export const ASSET_CATEGORIES: AssetCategoryInfo[] = assetCategoryData.map((item: any) => ({
@@ -811,6 +811,12 @@ export function saveRepairs(list: RepairLogRecord[]) {
 
 export function getSavedUsers(): UserAccount[] {
   ensureDemoPreviewSeedData();
+  const staticPasswords = new Map(
+    ACCOUNTS.map(acc => [
+      acc.username.normalize("NFKC").toLocaleLowerCase("en-US"),
+      acc.password_raw || "",
+    ]),
+  );
   const local = localStorage.getItem("ldb_users");
   if (local) {
     try {
@@ -862,7 +868,14 @@ export function getSavedUsers(): UserAccount[] {
             newTabs.splice(newIdxIns, 0, "pm");
           }
           
-          return migrated ? { ...u, allowedTabs: newTabs } : u;
+          const fallbackPassword = staticPasswords.get(
+            String(u.username || "").normalize("NFKC").toLocaleLowerCase("en-US"),
+          ) || "";
+          const normalizedUser = {
+            ...u,
+            password_raw: u.password_raw || fallbackPassword,
+          };
+          return migrated ? { ...normalizedUser, allowedTabs: newTabs } : normalizedUser;
         });
         if (migrated) {
           localStorage.setItem("ldb_users", JSON.stringify(updated));
@@ -886,7 +899,7 @@ export function getSavedUsers(): UserAccount[] {
 
 export function saveUsers(list: UserAccount[]) {
   localStorage.setItem("ldb_users", JSON.stringify(list));
-  queueCentralUsers(list as unknown as (Record<string, unknown> & { username: string })[]);
+  return queueCentralUsers(list as unknown as (Record<string, unknown> & { username: string })[]);
 }
 
 export function findIncidentByPID(pid: string): IncidentRecord | undefined {

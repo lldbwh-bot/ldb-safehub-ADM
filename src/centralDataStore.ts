@@ -226,8 +226,8 @@ let userQueue: Promise<void> = Promise.resolve();
 export const queueCentralSnapshot = (
   dataset: CentralDataset,
   values: JsonRecord[],
-): void => {
-  if (!isCentralApiAvailable() || !getApiToken()) return;
+): Promise<void> => {
+  if (!isCentralApiAvailable() || !getApiToken()) return Promise.resolve();
   const previous = queues.get(dataset) || Promise.resolve();
   const next = previous
     .catch(() => undefined)
@@ -250,10 +250,11 @@ export const queueCentralSnapshot = (
       console.error(`Central sync failed for ${dataset}`, error);
     });
   queues.set(dataset, next);
+  return next;
 };
 
-export const queueCentralUsers = (values: CentralUser[]): void => {
-  if (!isCentralApiAvailable() || !getApiToken()) return;
+export const queueCentralUsers = (values: CentralUser[]): Promise<void> => {
+  if (!isCentralApiAvailable() || !getApiToken()) return Promise.resolve();
   userQueue = userQueue
     .catch(() => undefined)
     .then(async () => {
@@ -283,4 +284,5 @@ export const queueCentralUsers = (values: CentralUser[]): void => {
     .catch((error) => {
       console.error('Central user sync failed', error);
     });
+  return userQueue;
 };

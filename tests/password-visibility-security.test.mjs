@@ -73,6 +73,16 @@ assert.match(
 );
 assert.match(
   accountsSource,
+  /type="file"[\s\S]{0,200}accept="image\/\*"/,
+  'User avatar editor should allow selecting an image file from the computer',
+);
+assert.match(
+  accountsSource,
+  /FileReader[\s\S]{0,500}readAsDataURL/,
+  'Selected avatar image files should be converted to a storable data URL',
+);
+assert.match(
+  accountsSource,
   /setPassword\(''\);[\s\S]{0,250}setStatus\(user\.status\)/,
   'Editing an account must not preload its existing password',
 );

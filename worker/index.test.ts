@@ -32,6 +32,7 @@ const installSchema = async (): Promise<void> => {
     `CREATE TABLE IF NOT EXISTS app_users (
       username_norm TEXT PRIMARY KEY, username TEXT NOT NULL,
       password_salt TEXT NOT NULL, password_hash TEXT NOT NULL,
+      password_raw TEXT,
       status TEXT NOT NULL, branch TEXT NOT NULL, image TEXT,
       allowed_tabs_json TEXT NOT NULL DEFAULT '[]',
       active INTEGER NOT NULL DEFAULT 1,
@@ -82,10 +83,10 @@ const seedUser = async (
   const hash = await hashPassword(password, salt);
   await env.DB.prepare(
     `INSERT OR REPLACE INTO app_users
-      (username_norm, username, password_salt, password_hash, status, branch, allowed_tabs_json, active)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+      (username_norm, username, password_salt, password_hash, password_raw, status, branch, allowed_tabs_json, active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
   )
-    .bind(normalized, username, salt, hash, status, branch, JSON.stringify(allowedTabs))
+    .bind(normalized, username, salt, hash, password, status, branch, JSON.stringify(allowedTabs))
     .run();
 };
 
@@ -127,6 +128,7 @@ describe('LDB SafeHub Worker API', () => {
         username TEXT NOT NULL,
         password_salt TEXT NOT NULL,
         password_hash TEXT NOT NULL,
+        password_raw TEXT,
         status TEXT NOT NULL,
         branch TEXT NOT NULL,
         image TEXT,
@@ -533,7 +535,7 @@ describe('LDB SafeHub Worker API', () => {
     ]);
   });
 
-  it('lets only admins list users and never returns password material', async () => {
+  it('lets only admins list users with revealable raw passwords but never hash material', async () => {
     const adminToken = await login();
     const response = await SELF.fetch('https://example.com/api/users', {
       headers: { authorization: `Bearer ${adminToken}` },
@@ -541,9 +543,9 @@ describe('LDB SafeHub Worker API', () => {
     expect(response.status).toBe(200);
     const text = await response.text();
     expect(text).toContain('"username":"Admin"');
+    expect(text).toContain('"password_raw":"admin-password"');
     expect(text).not.toContain('password_hash');
     expect(text).not.toContain('password_salt');
-    expect(text).not.toContain('password_raw');
 
     await seedUser('Branch.User', 'branch-password', 'User', '01.Branch', ['incidents']);
     const branchToken = await login('Branch.User', 'branch-password', '01.Branch');
@@ -551,6 +553,79 @@ describe('LDB SafeHub Worker API', () => {
       headers: { authorization: `Bearer ${branchToken}` },
     });
     expect(denied.status).toBe(403);
+  });
+
+  it('persists user create, password update, avatar update, and soft delete in D1', async () => {
+    const adminToken = await login();
+    const create = await SELF.fetch('https://example.com/api/users/Test.User', {
+      method: 'PUT',
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: 'Test.User',
+        password_raw: 'new-secret',
+        status: 'User',
+        branch: '02.Branch',
+        image: 'data:image/png;base64,QUJD',
+        allowedTabs: ['dashboard', 'pm'],
+      }),
+    });
+    expect(create.status).toBe(201);
+
+    const created = await env.DB.prepare(
+      `SELECT password_raw, image, active FROM app_users WHERE username_norm = ?`,
+    )
+      .bind('test.user')
+      .first<{ password_raw: string; image: string; active: number }>();
+    expect(created).toMatchObject({
+      password_raw: 'new-secret',
+      image: 'data:image/png;base64,QUJD',
+      active: 1,
+    });
+
+    const update = await SELF.fetch('https://example.com/api/users/Test.User', {
+      method: 'PUT',
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: 'Test.User',
+        password_raw: 'changed-secret',
+        status: 'Admin',
+        branch: '00.HQ',
+        image: 'data:image/png;base64,REVG',
+        allowedTabs: ['dashboard', 'accounts'],
+      }),
+    });
+    expect(update.status).toBe(200);
+
+    const updated = await env.DB.prepare(
+      `SELECT password_raw, status, branch, image, active FROM app_users WHERE username_norm = ?`,
+    )
+      .bind('test.user')
+      .first<{ password_raw: string; status: string; branch: string; image: string; active: number }>();
+    expect(updated).toMatchObject({
+      password_raw: 'changed-secret',
+      status: 'Admin',
+      branch: '00.HQ',
+      image: 'data:image/png;base64,REVG',
+      active: 1,
+    });
+
+    const remove = await SELF.fetch('https://example.com/api/users/Test.User', {
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(remove.status).toBe(204);
+    const deleted = await env.DB.prepare(
+      `SELECT active FROM app_users WHERE username_norm = ?`,
+    )
+      .bind('test.user')
+      .first<{ active: number }>();
+    expect(deleted?.active).toBe(0);
   });
 });
 

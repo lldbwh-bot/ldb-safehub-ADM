@@ -395,24 +395,24 @@ export default function App() {
     handleRefreshData();
   };
 
-  const handleSaveUsers = (updatedUsers: UserAccount[]) => {
+  const handleSaveUsers = async (updatedUsers: UserAccount[]) => {
     setUsers(updatedUsers);
-    saveUsers(updatedUsers);
+    await saveUsers(updatedUsers);
   };
 
-  const handleSaveBranches = (updatedBranches: BranchInfo[]) => {
+  const handleSaveBranches = async (updatedBranches: BranchInfo[]) => {
     setBranches(updatedBranches);
-    saveBranches(updatedBranches);
+    await saveBranches(updatedBranches);
   };
 
-  const handleSaveChecklistItems = (updatedItems: ChecklistItem[]) => {
+  const handleSaveChecklistItems = async (updatedItems: ChecklistItem[]) => {
     setChecklistItems(updatedItems);
-    saveChecklistItems(updatedItems);
+    await saveChecklistItems(updatedItems);
   };
 
-  const handleSaveSectors = (updatedSectors: SectorInfo[]) => {
+  const handleSaveSectors = async (updatedSectors: SectorInfo[]) => {
     setSectors(updatedSectors);
-    saveSectors(updatedSectors);
+    await saveSectors(updatedSectors);
   };
 
   const handleUpdateCurrentUser = (updatedUser: UserAccount) => {

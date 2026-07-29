@@ -12,14 +12,14 @@ import { CHECKLIST_ITEMS, getSavedRepairPresets, saveRepairPresets, DEFAULT_REPA
 interface AccountsViewProps {
   currentUser: UserAccount;
   users: UserAccount[];
-  onSaveUsers: (updatedUsers: UserAccount[]) => void;
+  onSaveUsers: (updatedUsers: UserAccount[]) => void | Promise<void>;
   onUpdateCurrentUser: (updatedUser: UserAccount) => void;
   branches: BranchInfo[];
-  onSaveBranches: (updatedBranches: BranchInfo[]) => void;
+  onSaveBranches: (updatedBranches: BranchInfo[]) => void | Promise<void>;
   checklistItems: ChecklistItem[];
-  onSaveChecklistItems: (updatedItems: ChecklistItem[]) => void;
+  onSaveChecklistItems: (updatedItems: ChecklistItem[]) => void | Promise<void>;
   sectors: SectorInfo[];
-  onSaveSectors: (updatedSectors: SectorInfo[]) => void;
+  onSaveSectors: (updatedSectors: SectorInfo[]) => void | Promise<void>;
 }
 
 export default function AccountsView({ 
@@ -153,6 +153,27 @@ export default function AccountsView({
     getStoredPasswordValue(user) || 'ບໍ່ມີລະຫັດ'
   );
 
+  const handleAvatarFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setErrorText('àºàº°àº¥àº¸àº™àº²à»€àº¥àº·àº­àºà»„àºŸàº¥à»Œàº®àº¹àºšàºžàº²àºšà»€àº—àº»à»ˆàº²àº™àº±à»‰àº™');
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setImage(reader.result);
+        setErrorText('');
+      }
+    };
+    reader.onerror = () => {
+      setErrorText('àºšà»à»ˆàºªàº²àº¡àº²àº”àº­à»ˆàº²àº™à»„àºŸàº¥à»Œàº®àº¹àºš User à»„àº”à»‰');
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Search filter for Branches/Divisions
   const filteredBranches = branches.filter(item => 
     item.ສາຂາ.toLowerCase().includes(branchSearchTerm.toLowerCase()) ||
@@ -236,15 +257,15 @@ export default function AccountsView({
     setDeleteUserConfirm(userToDelete);
   };
 
-  const executeDeleteUser = () => {
+  const executeDeleteUser = async () => {
     if (!deleteUserConfirm) return;
     const remainingUsers = users.filter(u => u.username !== deleteUserConfirm.username);
-    onSaveUsers(remainingUsers);
+    await onSaveUsers(remainingUsers);
     setDeleteUserConfirm(null);
     triggerToast(`ລົບຂໍ້ມູນຜູ້ໃຊ້ "${deleteUserConfirm.username}" ສຳເລັດ!`);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorText('');
 
@@ -296,12 +317,12 @@ export default function AccountsView({
       }
     }
 
-    onSaveUsers(updatedList);
+    await onSaveUsers(updatedList);
     setIsOpen(false);
   };
 
   // Add Branch / Division logic
-  const handleAddBranch = (e: React.FormEvent) => {
+  const handleAddBranch = async (e: React.FormEvent) => {
     e.preventDefault();
     setBranchErrorText('');
 
@@ -332,7 +353,7 @@ export default function AccountsView({
     };
 
     const updatedBranches = [newBranchObj, ...branches];
-    onSaveBranches(updatedBranches);
+    await onSaveBranches(updatedBranches);
 
     // Reset division input, keep branch input for easier continuous department adding
     setNewDivisionInput('');
@@ -347,19 +368,19 @@ export default function AccountsView({
     setDeleteBranchConfirm(itemToDelete);
   };
 
-  const executeDeleteBranch = () => {
+  const executeDeleteBranch = async () => {
     if (!deleteBranchConfirm) return;
     const remainingBranches = branches.filter(
       item => !(item.ສາຂາ === deleteBranchConfirm.ສາຂາ && item["ຝ່າຍ/ໜ່ວຍບໍລິການ"] === deleteBranchConfirm["ຝ່າຍ/ໜ່ວຍບໍລິການ"])
     );
 
-    onSaveBranches(remainingBranches);
+    await onSaveBranches(remainingBranches);
     setDeleteBranchConfirm(null);
     triggerToast("ລົບຂໍ້ມູນສາຂາ/ໜ່ວຍງານສຳເລັດ!");
   };
 
   // Sector management logic
-  const handleAddSector = (e: React.FormEvent) => {
+  const handleAddSector = async (e: React.FormEvent) => {
     e.preventDefault();
     setSectorErrorText('');
 
@@ -385,7 +406,7 @@ export default function AccountsView({
     };
 
     const updatedSectors = [newSectorObj, ...sectors];
-    onSaveSectors(updatedSectors);
+    await onSaveSectors(updatedSectors);
 
     setNewSectorInput('');
     setSectorErrorText('');
@@ -396,13 +417,13 @@ export default function AccountsView({
     setDeleteSectorConfirm(itemToDelete);
   };
 
-  const executeDeleteSector = () => {
+  const executeDeleteSector = async () => {
     if (!deleteSectorConfirm) return;
     const remainingSectors = sectors.filter(
       item => item.ຂະແໜງ !== deleteSectorConfirm.ຂະແໜງ
     );
 
-    onSaveSectors(remainingSectors);
+    await onSaveSectors(remainingSectors);
     setDeleteSectorConfirm(null);
     triggerToast("ລົບຂໍ້ມູນຂະແໜງສຳເລັດ!");
   };
@@ -434,7 +455,7 @@ export default function AccountsView({
     setChecklistErrorText('');
   };
 
-  const handleAddChecklistItem = (e: React.FormEvent) => {
+  const handleAddChecklistItem = async (e: React.FormEvent) => {
     e.preventDefault();
     setChecklistErrorText('');
 
@@ -483,7 +504,7 @@ export default function AccountsView({
         }
         return item;
       });
-      onSaveChecklistItems(updatedList);
+      await onSaveChecklistItems(updatedList);
       setEditingChecklistItem(null);
       setNewChecklistInspection('');
       setIsCustomSystem(false);
@@ -497,7 +518,7 @@ export default function AccountsView({
         Form_Type: newChecklistFormType,
       };
 
-      onSaveChecklistItems([newItem, ...checklistItems]);
+      await onSaveChecklistItems([newItem, ...checklistItems]);
       
       // reset form fields
       setNewChecklistInspection('');
@@ -511,7 +532,7 @@ export default function AccountsView({
     setDeleteChecklistItemConfirm(item);
   };
 
-  const executeDeleteChecklistItem = () => {
+  const executeDeleteChecklistItem = async () => {
     if (!deleteChecklistItemConfirm) return;
     const remaining = checklistItems.filter(
       item => !(
@@ -520,7 +541,7 @@ export default function AccountsView({
         item.ລາຍການກວດ === deleteChecklistItemConfirm.ລາຍການກວດ
       )
     );
-    onSaveChecklistItems(remaining);
+    await onSaveChecklistItems(remaining);
     setDeleteChecklistItemConfirm(null);
     triggerToast('ລົບລາຍການກວດກາກຳນົດສຳເລັດ!');
   };
@@ -529,8 +550,8 @@ export default function AccountsView({
     setShowResetConfirm(true);
   };
 
-  const executeResetChecklist = () => {
-    onSaveChecklistItems(CHECKLIST_ITEMS);
+  const executeResetChecklist = async () => {
+    await onSaveChecklistItems(CHECKLIST_ITEMS);
     setShowResetConfirm(false);
     triggerToast('ຣີເຊັດລາຍການກວດກາທັງໝົດເປັນຄ່າເລີ່ມຕົ້ນສຳເລັດ!');
   };
@@ -1895,6 +1916,12 @@ export default function AccountsView({
                       className="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800"
                     />
                   </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileSelect}
+                    className="mt-2 block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-2 file:text-xs file:font-bold file:text-emerald-750 hover:file:bg-emerald-100"
+                  />
                 </div>
 
                 {/* Role Switch & Branch selection */}

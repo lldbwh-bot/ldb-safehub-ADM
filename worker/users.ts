@@ -22,11 +22,12 @@ export const handleUsers = async (
 
   if (request.method === 'GET' && !username) {
     const result = await env.DB.prepare(
-      `SELECT username, status, branch, image, allowed_tabs_json, active,
+      `SELECT username, password_raw, status, branch, image, allowed_tabs_json, active,
               created_at, updated_at
          FROM app_users ORDER BY branch, username`,
     ).all<{
       username: string;
+      password_raw: string | null;
       status: string;
       branch: string;
       image: string | null;
@@ -50,6 +51,7 @@ export const handleUsers = async (
         }
         return {
           username: row.username,
+          password_raw: row.password_raw || '',
           status: row.status,
           branch: row.branch,
           image: row.image || undefined,
@@ -81,10 +83,10 @@ export const handleUsers = async (
     }
     const norm = name.normalize('NFKC').toLocaleLowerCase('en-US');
     const existing = await env.DB.prepare(
-      'SELECT password_salt, password_hash FROM app_users WHERE username_norm = ?',
+      'SELECT password_salt, password_hash, password_raw FROM app_users WHERE username_norm = ?',
     )
       .bind(norm)
-      .first<{ password_salt: string; password_hash: string }>();
+      .first<{ password_salt: string; password_hash: string; password_raw: string | null }>();
     if (!existing && !password) {
       return fail(400, 'PASSWORD_REQUIRED', 'password is required for a new user', requestId);
     }
@@ -92,15 +94,17 @@ export const handleUsers = async (
     const hash = password
       ? await derivePasswordHash(password, salt)
       : existing?.password_hash || '';
+    const rawPassword = password || existing?.password_raw || '';
     await env.DB.prepare(
       `INSERT INTO app_users
-        (username_norm, username, password_salt, password_hash, status, branch,
+        (username_norm, username, password_salt, password_hash, password_raw, status, branch,
          image, allowed_tabs_json, active, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
        ON CONFLICT(username_norm) DO UPDATE SET
          username = excluded.username,
          password_salt = excluded.password_salt,
          password_hash = excluded.password_hash,
+         password_raw = excluded.password_raw,
          status = excluded.status,
          branch = excluded.branch,
          image = excluded.image,
@@ -113,6 +117,7 @@ export const handleUsers = async (
         name,
         salt,
         hash,
+        rawPassword,
         status,
         branch,
         typeof body?.image === 'string' ? body.image : null,
