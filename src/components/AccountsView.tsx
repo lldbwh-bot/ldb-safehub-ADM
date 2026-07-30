@@ -109,6 +109,21 @@ export default function AccountsView({
     }, 3000);
   };
 
+  const persistUserList = async (nextUsers: UserAccount[], successMessage: string, rollbackUsers = users) => {
+    try {
+      await onSaveUsers(nextUsers);
+      triggerToast(successMessage);
+    } catch (error) {
+      console.error('Failed to save user permissions:', error);
+      try {
+        await onSaveUsers(rollbackUsers);
+      } catch (rollbackError) {
+        console.error('Failed to rollback user permissions:', rollbackError);
+      }
+      setSystemAlertMessage('ບໍ່ສາມາດບັນທຶກ/ລຶບຂໍ້ມູນຜູ້ໃຊ້ໄດ້. ກະລຸນາກວດເຊັກການເຊື່ອມຕໍ່ ແລ້ວລອງໃໝ່.');
+    }
+  };
+
   // Search filter for Users
   const filteredUsers = users.filter(user => 
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -259,10 +274,11 @@ export default function AccountsView({
 
   const executeDeleteUser = async () => {
     if (!deleteUserConfirm) return;
-    const remainingUsers = users.filter(u => u.username !== deleteUserConfirm.username);
-    await onSaveUsers(remainingUsers);
+    const targetUser = deleteUserConfirm;
+    const previousUsers = users;
+    const remainingUsers = users.filter(u => u.username !== targetUser.username);
     setDeleteUserConfirm(null);
-    triggerToast(`ລົບຂໍ້ມູນຜູ້ໃຊ້ "${deleteUserConfirm.username}" ສຳເລັດ!`);
+    await persistUserList(remainingUsers, `ລົບຂໍ້ມູນຜູ້ໃຊ້ "${targetUser.username}" ສຳເລັດ!`, previousUsers);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -317,8 +333,8 @@ export default function AccountsView({
       }
     }
 
-    await onSaveUsers(updatedList);
     setIsOpen(false);
+    await persistUserList(updatedList, `ບັນທຶກບັນຊີຜູ້ໃຊ້ "${cleanedUsername}" ສຳເລັດ!`, users);
   };
 
   // Add Branch / Division logic
@@ -370,13 +386,21 @@ export default function AccountsView({
 
   const executeDeleteBranch = async () => {
     if (!deleteBranchConfirm) return;
+    const targetBranch = deleteBranchConfirm;
+    const previousBranches = branches;
     const remainingBranches = branches.filter(
-      item => !(item.ສາຂາ === deleteBranchConfirm.ສາຂາ && item["ຝ່າຍ/ໜ່ວຍບໍລິການ"] === deleteBranchConfirm["ຝ່າຍ/ໜ່ວຍບໍລິການ"])
+      item => !(item.ສາຂາ === targetBranch.ສາຂາ && item["ຝ່າຍ/ໜ່ວຍບໍລິການ"] === targetBranch["ຝ່າຍ/ໜ່ວຍບໍລິການ"])
     );
 
-    await onSaveBranches(remainingBranches);
     setDeleteBranchConfirm(null);
-    triggerToast("ລົບຂໍ້ມູນສາຂາ/ໜ່ວຍງານສຳເລັດ!");
+    try {
+      await onSaveBranches(remainingBranches);
+      triggerToast("ລົບຂໍ້ມູນສາຂາ/ໜ່ວຍງານສຳເລັດ!");
+    } catch (error) {
+      console.error('Failed to delete branch/division:', error);
+      await onSaveBranches(previousBranches);
+      setSystemAlertMessage('ບໍ່ສາມາດລຶບຂໍ້ມູນສາຂາ/ໜ່ວຍງານໄດ້. ກະລຸນາລອງໃໝ່.');
+    }
   };
 
   // Sector management logic
@@ -419,13 +443,21 @@ export default function AccountsView({
 
   const executeDeleteSector = async () => {
     if (!deleteSectorConfirm) return;
+    const targetSector = deleteSectorConfirm;
+    const previousSectors = sectors;
     const remainingSectors = sectors.filter(
-      item => item.ຂະແໜງ !== deleteSectorConfirm.ຂະແໜງ
+      item => item.ຂະແໜງ !== targetSector.ຂະແໜງ
     );
 
-    await onSaveSectors(remainingSectors);
     setDeleteSectorConfirm(null);
-    triggerToast("ລົບຂໍ້ມູນຂະແໜງສຳເລັດ!");
+    try {
+      await onSaveSectors(remainingSectors);
+      triggerToast("ລົບຂໍ້ມູນຂະແໜງສຳເລັດ!");
+    } catch (error) {
+      console.error('Failed to delete sector:', error);
+      await onSaveSectors(previousSectors);
+      setSystemAlertMessage('ບໍ່ສາມາດລຶບຂໍ້ມູນຂະແໜງໄດ້. ກະລຸນາລອງໃໝ່.');
+    }
   };
 
   // Checklist Item management handlers
@@ -534,16 +566,24 @@ export default function AccountsView({
 
   const executeDeleteChecklistItem = async () => {
     if (!deleteChecklistItemConfirm) return;
+    const targetChecklistItem = deleteChecklistItemConfirm;
+    const previousChecklistItems = checklistItems;
     const remaining = checklistItems.filter(
       item => !(
-        item.ລະບົບທີ່ກວດ === deleteChecklistItemConfirm.ລະບົບທີ່ກວດ &&
-        item.ໝວດລະບົບກວດ === deleteChecklistItemConfirm.ໝວດລະບົບກວດ &&
-        item.ລາຍການກວດ === deleteChecklistItemConfirm.ລາຍການກວດ
+        item.ລະບົບທີ່ກວດ === targetChecklistItem.ລະບົບທີ່ກວດ &&
+        item.ໝວດລະບົບກວດ === targetChecklistItem.ໝວດລະບົບກວດ &&
+        item.ລາຍການກວດ === targetChecklistItem.ລາຍການກວດ
       )
     );
-    await onSaveChecklistItems(remaining);
     setDeleteChecklistItemConfirm(null);
-    triggerToast('ລົບລາຍການກວດກາກຳນົດສຳເລັດ!');
+    try {
+      await onSaveChecklistItems(remaining);
+      triggerToast('ລົບລາຍການກວດກາກຳນົດສຳເລັດ!');
+    } catch (error) {
+      console.error('Failed to delete checklist item:', error);
+      await onSaveChecklistItems(previousChecklistItems);
+      setSystemAlertMessage('ບໍ່ສາມາດລຶບລາຍການກວດກາໄດ້. ກະລຸນາລອງໃໝ່.');
+    }
   };
 
   const handleResetChecklistToDefault = () => {
@@ -551,9 +591,16 @@ export default function AccountsView({
   };
 
   const executeResetChecklist = async () => {
-    await onSaveChecklistItems(CHECKLIST_ITEMS);
+    const previousChecklistItems = checklistItems;
     setShowResetConfirm(false);
-    triggerToast('ຣີເຊັດລາຍການກວດກາທັງໝົດເປັນຄ່າເລີ່ມຕົ້ນສຳເລັດ!');
+    try {
+      await onSaveChecklistItems(CHECKLIST_ITEMS);
+      triggerToast('ຣີເຊັດລາຍການກວດກາທັງໝົດເປັນຄ່າເລີ່ມຕົ້ນສຳເລັດ!');
+    } catch (error) {
+      console.error('Failed to reset checklist items:', error);
+      await onSaveChecklistItems(previousChecklistItems);
+      setSystemAlertMessage('ບໍ່ສາມາດຣີເຊັດລາຍການກວດກາໄດ້. ກະລຸນາລອງໃໝ່.');
+    }
   };
 
   const handleSavePreset = (e: React.FormEvent) => {
