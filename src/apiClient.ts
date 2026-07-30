@@ -8,16 +8,8 @@ const PRODUCTION_HOSTS = new Set([
   'ldb-safehub-prod.lldbwh.workers.dev',
 ]);
 
-const DEMO_PREVIEW_HOSTS = new Set([
-  'demo.ldb-adm-safehub.com',
-  'ldb-safehub-demo.lldbwh.workers.dev',
-]);
-
 export const isProductionHost = (hostname: string): boolean =>
   PRODUCTION_HOSTS.has(hostname.trim().toLocaleLowerCase('en-US'));
-
-export const isDemoPreviewHost = (hostname: string): boolean =>
-  DEMO_PREVIEW_HOSTS.has(hostname.trim().toLocaleLowerCase('en-US'));
 
 export const isCentralApiAvailable = (): boolean =>
   typeof window !== 'undefined' && isProductionHost(window.location.hostname);

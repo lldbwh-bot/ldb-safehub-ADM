@@ -6,7 +6,6 @@
 import accountsData from './data/ ACCOUNT.json';
 import repairMappingMasterData from './repairMappingMasterData.json';
 import { queueCentralSnapshot, queueCentralUsers } from './centralDataStore';
-import { isDemoPreviewHost } from './apiClient';
 import checklistData from './data/checklistitem.json';
 import appSheetMappingData from './data/AppSheet_Mapping.json';
 import branchData from './data/ສາຂາ.json';
@@ -1917,11 +1916,7 @@ const ALL_FUNCTION_TABS = [
 ] as const;
 
 const isDemoPreviewRuntime = (): boolean => {
-  try {
-    return typeof window !== 'undefined' && isDemoPreviewHost(window.location.hostname);
-  } catch {
-    return false;
-  }
+  return false;
 };
 
 const pickBranch = (prefix: string, fallbackIndex: number): string =>

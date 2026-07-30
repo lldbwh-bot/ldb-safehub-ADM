@@ -11,9 +11,6 @@ import { handleUsers } from './users';
 const checkBindings = async (
   env: Env,
 ): Promise<HealthResponse['services']> => {
-  if (env.APP_ENV === 'uat') {
-    return { d1: 'disabled', r2: 'disabled' };
-  }
   await env.DB.prepare('SELECT 1 AS ok').first();
   await env.FILES.list({ limit: 1 });
   return { d1: 'ok', r2: 'ok' };
@@ -52,15 +49,6 @@ export default {
           version: env.APP_VERSION,
           requestId,
         } satisfies VersionResponse);
-      }
-
-      if (env.APP_ENV === 'uat' && url.pathname.startsWith('/api/')) {
-        return fail(
-          404,
-          'PREVIEW_MODE',
-          'Demo/UAT stores test data in this browser only',
-          requestId,
-        );
       }
 
       if (request.method === 'POST' && url.pathname === '/api/auth/login') {

@@ -2,10 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
-const required = [
-  "CLOUDFLARE_PROD_D1_ID",
-  "CLOUDFLARE_UAT_D1_ID",
-];
+const required = ["CLOUDFLARE_PROD_D1_ID"];
 
 const missing = required.filter((name) => !process.env[name]?.trim());
 if (missing.length > 0) {
@@ -53,36 +50,6 @@ const config = {
     enabled: true,
     logs: { head_sampling_rate: 1 },
     traces: { enabled: true, head_sampling_rate: 0.01 },
-  },
-  env: {
-    uat: {
-      name: "ldb-safehub-demo",
-      workers_dev: true,
-      routes: [
-        {
-          pattern: "demo.ldb-adm-safehub.com",
-          custom_domain: true,
-        },
-      ],
-      vars: {
-        APP_ENV: "uat",
-        APP_VERSION: "git-uat",
-      },
-      d1_databases: [
-        {
-          binding: "DB",
-          database_name: "ldb-safehub-demo",
-          database_id: process.env.CLOUDFLARE_UAT_D1_ID.trim(),
-          migrations_dir: "migrations",
-        },
-      ],
-      r2_buckets: [
-        {
-          binding: "FILES",
-          bucket_name: "ldb-safehub-demo-files",
-        },
-      ],
-    },
   },
 };
 

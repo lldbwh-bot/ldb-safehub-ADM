@@ -1,8 +1,8 @@
 # LDB SafeHub
 
-> Deployment source for the LDB SafeHub browser preview. See
-> [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the Production and Demo/UAT
-> branch strategy and the current browser-storage limitations.
+> Deployment source for LDB SafeHub. See
+> [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the Production deployment
+> strategy and the current browser-storage limitations.
 
 ລະບົບຄວາມປອດໄພ ແລະ ບຳລຸງຮັກສາອາຄານ LDB SafeHub.
 

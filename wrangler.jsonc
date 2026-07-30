@@ -44,21 +44,5 @@
       "enabled": true,
       "head_sampling_rate": 0.01
     }
-  },
-  "env": {
-    "uat": {
-      "name": "ldb-safehub-demo",
-      "workers_dev": true,
-      "routes": [
-        {
-          "pattern": "demo.ldb-adm-safehub.com",
-          "custom_domain": true
-        }
-      ],
-      "vars": {
-        "APP_ENV": "uat",
-        "APP_VERSION": "git-uat"
-      }
-    }
   }
 }

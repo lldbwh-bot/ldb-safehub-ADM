@@ -61,7 +61,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       }
     }
 
-    // File and Demo/UAT previews intentionally keep browser-local authentication.
+    // Local file previews intentionally keep browser-local authentication.
     const user = usersList.find(
       (acc) => acc.username.toLowerCase() === username.trim().toLowerCase()
     );

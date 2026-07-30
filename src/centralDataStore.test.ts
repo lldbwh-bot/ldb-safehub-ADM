@@ -7,10 +7,9 @@ import {
 import { isProductionHost } from './apiClient';
 
 describe('central datastore compatibility mapping', () => {
-  it('enables D1/R2 only on Production and keeps UAT browser-local', () => {
+  it('enables D1/R2 only on Production hosts', () => {
     expect(isProductionHost('ldb-adm-safehub.com')).toBe(true);
     expect(isProductionHost('ldb-safehub-prod.lldbwh.workers.dev')).toBe(true);
-    expect(isProductionHost('demo.ldb-adm-safehub.com')).toBe(false);
     expect(isProductionHost('localhost')).toBe(false);
   });
 
