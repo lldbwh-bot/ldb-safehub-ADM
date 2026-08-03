@@ -16,6 +16,7 @@ import {
   SECTORS,
   cleanString,
   formatExcelDate,
+  formatDateInputValue,
   CHECKLIST_ITEMS,
   APPSHEET_MAPPING,
 } from '../dataStore';
@@ -455,6 +456,7 @@ export default function IncidentsView({
   const [assetSector, setAssetSector] = useState('ຂະແໜງ ບໍລິການ');
   const [floor, setFloor] = useState('1');
   const [inspectorName, setInspectorName] = useState(() => currentUser?.username || '');
+  const [incidentDateInput, setIncidentDateInput] = useState(() => formatDateInputValue());
   const [inspectorStatus, setInspectorStatus] = useState("ພະນັກງານ ທພລ"); // "ພະນັກງານ ທພລ" | "ພາຍນອກ"
 
   const directSystems = React.useMemo(
@@ -677,8 +679,10 @@ export default function IncidentsView({
       }
     }
 
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
+    const formattedDate = formatDateInputValue(incidentDateInput);
+    const selectedDate = new Date(`${formattedDate}T00:00:00`);
+    const today = Number.isNaN(selectedDate.getTime()) ? new Date() : selectedDate;
+    const formattedTime = new Date().toTimeString().split(' ')[0].substring(0, 5);
     const pid = Math.random().toString(36).substr(2, 9);
     const incidentCode = `INC-${Math.floor(Math.random() * 900 + 100)}`;
 
@@ -705,6 +709,10 @@ export default function IncidentsView({
       ລາຍລະອຽດປັນຫາທີ່ພົບ: problem.trim(),
       ປະເມີນຜົນກະທົບ: impact,
       ວີທີແກ້ໄຂ: proposedSolution.trim() || "ລໍຖ້າກວດສອບ",
+      ວັນທີ່ກວດ: formattedDate,
+      ເວລາກວດ: formattedTime,
+      ຜູ້ກວດກາ: inspectorStatus,
+      ຊື່ຜູ້ກວດ: inspectorName,
       "ສາຂາ ": targetBranch,
       "ຝ່າຍ/ໜ່ວຍບໍລິການ": targetUnit,
       ຂະແໜງ: targetSector,
@@ -738,6 +746,7 @@ export default function IncidentsView({
     setAssetUnit(currentUser.branch);
     setAssetSector('ຂະແໜງ ບໍລິການ');
     setHasAsset('yes');
+    setIncidentDateInput(formatDateInputValue());
     resetDirectIncidentAddModes();
     setIsNewOpen(false);
   };
@@ -1551,6 +1560,21 @@ export default function IncidentsView({
                   <span className="font-bold text-indigo-900 text-[13px] flex items-center gap-1.5">
                     📍 ສະຖານທີ່ພົບເຫດການ (Incident Occurrence Location)
                   </span>
+                </div>
+
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="block font-bold text-slate-600 mb-1">ວັນທີແຈ້ງ (DD/MM/YYYY) *</label>
+                  <input
+                    id="direct-incident-date-input"
+                    type="date"
+                    value={incidentDateInput}
+                    onChange={(e) => setIncidentDateInput(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white text-slate-800 font-semibold cursor-pointer"
+                    required
+                  />
+                  <p className="mt-1 text-[10px] text-slate-500">
+                    ສະແດງໃນລະບົບ/Export: {formatExcelDate(incidentDateInput)}
+                  </p>
                 </div>
 
                 <div>

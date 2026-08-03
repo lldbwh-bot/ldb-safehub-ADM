@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { InspectionRecord, UserAccount, ChecklistItem, IncidentRecord, SectorInfo } from '../types';
-import { ASSET_CATEGORIES, getSavedBranches, SECTORS, cleanString, formatExcelDate } from '../dataStore';
+import { ASSET_CATEGORIES, getSavedBranches, SECTORS, cleanString, formatExcelDate, formatDateInputValue } from '../dataStore';
 import { LOCATION_FLOOR_LABEL, LOCATION_FLOOR_OPTIONS } from '../locationFloorOptions';
 import {
   INCIDENT_ASSET_ADD_NEW_SENTINEL,
@@ -320,6 +320,7 @@ export default function InspectionsView({
   const [targetUnit, setTargetUnit] = useState(() => currentUser?.branch || '');
   const [targetSector, setTargetSector] = useState('ຂະແແໜງ ບໍລິການ');
   const [inspectorName, setInspectorName] = useState(() => currentUser?.username || '');
+  const [inspectionDateInput, setInspectionDateInput] = useState(() => formatDateInputValue());
   const [inspectorStatus, setInspectorStatus] = useState("ພະນັກງານ ທພລ"); // "ພະນັກງານ ທພລ" | "ພາຍນອກ"
 
   // Edit Inspection Dialog State
@@ -957,6 +958,7 @@ export default function InspectionsView({
     setEvaluations({});
     setDefectForms({});
     setManualIncidentForms([]);
+    setInspectionDateInput(formatDateInputValue());
   };
 
   const handleFormTypeChange = (
@@ -1265,9 +1267,10 @@ export default function InspectionsView({
     const inspectionCode = `LDB-SAF-${randomHex}`;
     const pid = Math.random().toString(36).substr(2, 9);
     
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0]; // Store as ISO
-    const formattedTime = today.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
+    const formattedDate = formatDateInputValue(inspectionDateInput); // Store as ISO for raw data
+    const selectedDate = new Date(`${formattedDate}T00:00:00`);
+    const today = Number.isNaN(selectedDate.getTime()) ? new Date() : selectedDate;
+    const formattedTime = new Date().toTimeString().split(' ')[0].substring(0, 5); // HH:MM
 
     // Format final list of evaluations for the main record log
     const evaluatedList = filteredChecklistOptions.map((chk) => {
@@ -1905,6 +1908,21 @@ export default function InspectionsView({
                     <option value="ກວດປະຈໍາອາທິດ">ກວດປະຈໍາອາທິດ (Weekly Inspection)</option>
                     <option value="ສຸມກວດ">ສຸມກວດ (Spot Check)</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">ວັນທີກວດ (DD/MM/YYYY) *</label>
+                  <input
+                    id="new-inspection-date-input"
+                    type="date"
+                    value={inspectionDateInput}
+                    onChange={(e) => setInspectionDateInput(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white text-slate-800 font-semibold cursor-pointer"
+                    required
+                  />
+                  <p className="mt-1 text-[10px] text-slate-500">
+                    ສະແດງໃນລະບົບ/Export: {formatExcelDate(inspectionDateInput)}
+                  </p>
                 </div>
 
 

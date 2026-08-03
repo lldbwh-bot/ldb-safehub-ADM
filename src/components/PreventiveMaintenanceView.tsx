@@ -1209,7 +1209,7 @@ export default function PreventiveMaintenanceView({
                           <p className="font-semibold text-slate-700">{item.systemCategory} • {item.subsystemCategory}</p>
                           <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">{item.branch.replace(/^\d+\.\s*(ສາຂາ\s*)?/, '')}</p>
                         </td>
-                        <td className="p-4 text-center font-mono text-slate-500">{item.inspectionDate}</td>
+                        <td className="p-4 text-center font-mono text-slate-500">{formatExcelDate(item.inspectionDate)}</td>
                         <td className="p-4 font-semibold text-slate-700">{item.inspector}</td>
                         <td className="p-4 text-center">
                           <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black ${
@@ -1918,7 +1918,7 @@ export default function PreventiveMaintenanceView({
                 </div>
                 <div>
                   <p className="text-slate-400 font-bold">ວັນທີກວດ PM:</p>
-                  <p className="font-bold mt-1 text-slate-900 font-mono">{viewingHistoryLog.inspectionDate}</p>
+                  <p className="font-bold mt-1 text-slate-900 font-mono">{formatExcelDate(viewingHistoryLog.inspectionDate)}</p>
                 </div>
                 <div>
                   <p className="text-slate-400 font-bold">ຜູ້ກວດກາ (Inspector):</p>

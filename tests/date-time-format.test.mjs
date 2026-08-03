@@ -34,6 +34,14 @@ try {
     join(process.cwd(), 'src/components/PreventiveMaintenanceView.tsx'),
     'utf8',
   );
+  const inspectionsSource = await readFile(
+    join(process.cwd(), 'src/components/InspectionsView.tsx'),
+    'utf8',
+  );
+  const incidentsSource = await readFile(
+    join(process.cwd(), 'src/components/IncidentsView.tsx'),
+    'utf8',
+  );
   const dashboardSource = await readFile(
     join(process.cwd(), 'src/components/DashboardView.tsx'),
     'utf8',
@@ -69,13 +77,28 @@ try {
   );
   assert.equal(
     formatTimeSafe(date),
-    '08:05:09',
-    'System times must use English/world 24-hour format',
+    '08:05',
+    'System times must use English/world 24-hour HH:mm format',
   );
   assert.equal(
     formatDateTimeSafe(date),
-    '29/07/2026 08:05:09',
-    'Combined timestamps must use dd/mm/yyyy plus 24-hour English/world time',
+    '29/07/2026 08:05',
+    'Combined timestamps must use dd/mm/yyyy plus 24-hour HH:mm English/world time',
+  );
+  assert.match(
+    inspectionsSource,
+    /id="new-inspection-date-input"/,
+    'New Safety Inspection form must expose a selectable inspection date field',
+  );
+  assert.match(
+    incidentsSource,
+    /id="direct-incident-date-input"/,
+    'Direct Incident Report form must expose a selectable incident/report date field',
+  );
+  assert.match(
+    incidentsSource,
+    /ວັນທີ່ກວດ:\s*formattedDate/,
+    'Direct Incident records must persist the selected source date for downstream workflow and export',
   );
   assert.match(
     pmSource,
@@ -91,6 +114,21 @@ try {
     dashboardSource,
     /formatExcelDate\(asset\.nextMaintenanceDate\)/,
     'Dashboard PM due table must display Next PM Date through the regional date formatter',
+  );
+  assert.doesNotMatch(
+    pmSource,
+    /\{item\.inspectionDate\}/,
+    'PM history table must not display raw ISO inspection dates',
+  );
+  assert.doesNotMatch(
+    pmSource,
+    /\{viewingHistoryLog\.inspectionDate\}/,
+    'PM history detail must not display raw ISO inspection dates',
+  );
+  assert.doesNotMatch(
+    dashboardSource,
+    /\{record\.inspectionDate\}/,
+    'Dashboard PM due table must not display raw ISO inspection dates',
   );
 
   console.log('Date/time regional format checks passed.');

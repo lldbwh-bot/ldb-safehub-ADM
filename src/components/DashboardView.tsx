@@ -1257,7 +1257,7 @@ export default function DashboardView({
                         return (
                           <div key={index} className="space-y-1 rounded-xl border border-cyan-300/10 bg-slate-950/25 p-3 transition hover:bg-cyan-300/5">
                             <div className="flex items-center justify-between text-[10px]">
-                              <span className="font-bold text-slate-300">{record.inspectionDate}</span>
+                              <span className="font-bold text-slate-300">{formatExcelDate(record.inspectionDate)}</span>
                               <span className={`px-2 py-0.5 rounded font-black text-[9px] ${
                                 isNormal ? 'bg-emerald-400/10 text-emerald-200' : 'bg-rose-400/10 text-rose-200'
                               }`}>
