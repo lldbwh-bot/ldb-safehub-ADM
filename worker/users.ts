@@ -10,6 +10,42 @@ const adminOnly = (
     ? null
     : fail(403, 'ADMIN_REQUIRED', 'Administrator access is required', requestId);
 
+const normalizeUserImage = (
+  image: unknown,
+  requestId: string,
+): { image: string | null; error: Response | null } => {
+  if (typeof image !== 'string') return { image: null, error: null };
+  const trimmed = image.trim();
+  if (!trimmed) return { image: null, error: null };
+  if (trimmed.startsWith('data:')) {
+    return {
+      image: null,
+      error: fail(
+        400,
+        'USER_IMAGE_MUST_USE_R2',
+        'User avatar images must be uploaded to R2 before saving the user record',
+        requestId,
+      ),
+    };
+  }
+  if (
+    trimmed.startsWith('/api/files/') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('http://')
+  ) {
+    return { image: trimmed, error: null };
+  }
+  return {
+    image: null,
+    error: fail(
+      400,
+      'USER_IMAGE_INVALID',
+      'User avatar image must be an R2 file URL or an absolute image URL',
+      requestId,
+    ),
+  };
+};
+
 export const handleUsers = async (
   request: Request,
   env: Env,
@@ -83,6 +119,8 @@ export const handleUsers = async (
     if (!name || !branch) {
       return fail(400, 'INVALID_USER', 'username and branch are required', requestId);
     }
+    const normalizedImage = normalizeUserImage(body?.image, requestId);
+    if (normalizedImage.error) return normalizedImage.error;
     const norm = name.normalize('NFKC').toLocaleLowerCase('en-US');
     const existing = await env.DB.prepare(
       'SELECT password_salt, password_hash, password_raw FROM app_users WHERE username_norm = ?',
@@ -122,7 +160,7 @@ export const handleUsers = async (
         rawPassword,
         status,
         branch,
-        typeof body?.image === 'string' ? body.image : null,
+        normalizedImage.image,
         JSON.stringify(allowedTabs),
       )
       .run();

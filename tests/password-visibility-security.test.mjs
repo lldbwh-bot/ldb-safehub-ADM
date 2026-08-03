@@ -78,8 +78,13 @@ assert.match(
 );
 assert.match(
   accountsSource,
-  /FileReader[\s\S]{0,500}readAsDataURL/,
-  'Selected avatar image files should be converted to a storable data URL',
+  /uploadCentralFile[\s\S]{0,900}entityType:\s*['"]users['"]/,
+  'Selected avatar image files must be uploaded to R2 before storing the user record',
+);
+assert.doesNotMatch(
+  accountsSource,
+  /setImage\(reader\.result\)/,
+  'User avatar images must not be stored as browser data URLs in account records',
 );
 assert.match(
   accountsSource,

@@ -19,6 +19,13 @@ export type CentralDataset = (typeof CENTRAL_DATASETS)[number];
 type JsonRecord = Record<string, unknown>;
 type DatasetSnapshot = Partial<Record<CentralDataset, JsonRecord[]>>;
 type CentralUser = JsonRecord & { username: string };
+type CentralFileUploadResult = {
+  fileId: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  url: string;
+};
 
 const LOCAL_KEYS: Record<CentralDataset, string> = {
   inspections: 'ldb_local_inspections',
@@ -110,6 +117,26 @@ const dataUrlToBlob = (value: string): Blob | null => {
   }
 };
 
+export const uploadCentralFile = async (
+  file: Blob,
+  options: {
+    fileName: string;
+    entityType: string;
+    entityId: string;
+  },
+): Promise<CentralFileUploadResult> => {
+  const query = new URLSearchParams({
+    fileName: options.fileName,
+    entityType: options.entityType,
+    entityId: options.entityId,
+  });
+  return apiRequest<CentralFileUploadResult>(`/api/files?${query}`, {
+    method: 'POST',
+    headers: { 'content-type': file.type || 'application/octet-stream' },
+    body: file,
+  });
+};
+
 const moveFilesToR2 = async (
   value: unknown,
   entityType: string,
@@ -119,15 +146,10 @@ const moveFilesToR2 = async (
   if (typeof value === 'string' && value.startsWith('data:')) {
     const blob = dataUrlToBlob(value);
     if (!blob) return value;
-    const query = new URLSearchParams({
+    const result = await uploadCentralFile(blob, {
       fileName: `${entityId}-${path.replace(/[^a-z0-9_-]/gi, '-')}`,
       entityType,
       entityId,
-    });
-    const result = await apiRequest<{ url: string }>(`/api/files?${query}`, {
-      method: 'POST',
-      headers: { 'content-type': blob.type },
-      body: blob,
     });
     return result.url;
   }
@@ -263,12 +285,17 @@ export const queueCentralUsers = (values: CentralUser[]): Promise<void> => {
         values.map((user) => [user.username.toLocaleLowerCase('en-US'), user]),
       );
       for (const user of values) {
+        const preparedUser = await moveFilesToR2(
+          user,
+          'users',
+          user.username.normalize('NFKC').toLocaleLowerCase('en-US'),
+        ) as CentralUser;
         await apiRequest(
           `/api/users/${encodeURIComponent(user.username)}`,
           {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(user),
+            body: JSON.stringify(preparedUser),
           },
         );
       }

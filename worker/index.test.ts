@@ -557,6 +557,26 @@ describe('LDB SafeHub Worker API', () => {
 
   it('persists user create, password update, avatar update, and soft delete in D1', async () => {
     const adminToken = await login();
+    const inlineAvatar = await SELF.fetch('https://example.com/api/users/Inline.Avatar', {
+      method: 'PUT',
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: 'Inline.Avatar',
+        password_raw: 'new-secret',
+        status: 'User',
+        branch: '02.Branch',
+        image: 'data:image/png;base64,QUJD',
+        allowedTabs: ['dashboard', 'pm'],
+      }),
+    });
+    expect(inlineAvatar.status).toBe(400);
+    await expect(inlineAvatar.json()).resolves.toMatchObject({
+      error: { code: 'USER_IMAGE_MUST_USE_R2' },
+    });
+
     const create = await SELF.fetch('https://example.com/api/users/Test.User', {
       method: 'PUT',
       headers: {
@@ -568,7 +588,7 @@ describe('LDB SafeHub Worker API', () => {
         password_raw: 'new-secret',
         status: 'User',
         branch: '02.Branch',
-        image: 'data:image/png;base64,QUJD',
+        image: '/api/files/avatar-create',
         allowedTabs: ['dashboard', 'pm'],
       }),
     });
@@ -581,7 +601,7 @@ describe('LDB SafeHub Worker API', () => {
       .first<{ password_raw: string; image: string; active: number }>();
     expect(created).toMatchObject({
       password_raw: 'new-secret',
-      image: 'data:image/png;base64,QUJD',
+      image: '/api/files/avatar-create',
       active: 1,
     });
 
@@ -596,7 +616,7 @@ describe('LDB SafeHub Worker API', () => {
         password_raw: 'changed-secret',
         status: 'Admin',
         branch: '00.HQ',
-        image: 'data:image/png;base64,REVG',
+        image: '/api/files/avatar-update',
         allowedTabs: ['dashboard', 'accounts'],
       }),
     });
@@ -611,7 +631,7 @@ describe('LDB SafeHub Worker API', () => {
       password_raw: 'changed-secret',
       status: 'Admin',
       branch: '00.HQ',
-      image: 'data:image/png;base64,REVG',
+      image: '/api/files/avatar-update',
       active: 1,
     });
 

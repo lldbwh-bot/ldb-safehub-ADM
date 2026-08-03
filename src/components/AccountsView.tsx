@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { 
   Users, UserPlus, Trash2, Edit2, Shield, Check, X, 
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { UserAccount, BranchInfo, ChecklistItem, SectorInfo, RepairPreset } from '../types';
 import { CHECKLIST_ITEMS, getSavedRepairPresets, saveRepairPresets, DEFAULT_REPAIR_PRESETS } from '../dataStore';
+import { uploadCentralFile } from '../centralDataStore';
 
 interface AccountsViewProps {
   currentUser: UserAccount;
@@ -48,11 +49,11 @@ export default function AccountsView({
   const [repairPresets, setRepairPresets] = useState<RepairPreset[]>(() => getSavedRepairPresets());
   const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
   const [presetSparePart, setPresetSparePart] = useState('');
-  const [presetSubCategory, setPresetSubCategory] = useState('ລະບົບໄຟຟ້າ');
+  const [presetSubCategory, setPresetSubCategory] = useState('àº¥àº°àºšàº»àºšà»„àºŸàºŸà»‰àº²');
   const [isCustomSubCategory, setIsCustomSubCategory] = useState(false);
   const [presetSubItem, setPresetSubItem] = useState('');
-  const [presetWorkType, setPresetWorkType] = useState('ປ່ຽນອະໄຫຼ່');
-  const [presetUnit, setPresetUnit] = useState('ອັນ');
+  const [presetWorkType, setPresetWorkType] = useState('àº›à»ˆàº½àº™àº­àº°à»„àº«àº¼à»ˆ');
+  const [presetUnit, setPresetUnit] = useState('àº­àº±àº™');
   const [presetPrice, setPresetPrice] = useState<number>(0);
   const [presetError, setPresetError] = useState('');
 
@@ -65,7 +66,7 @@ export default function AccountsView({
   const [newChecklistSystem, setNewChecklistSystem] = useState('');
   const [newChecklistCategory, setNewChecklistCategory] = useState('');
   const [newChecklistInspection, setNewChecklistInspection] = useState('');
-  const [newChecklistFormType, setNewChecklistFormType] = useState('ສາຂາ');
+  const [newChecklistFormType, setNewChecklistFormType] = useState('àºªàº²àº‚àº²');
   const [checklistFormTypeFilter, setChecklistFormTypeFilter] = useState('ALL');
   const [checklistErrorText, setChecklistErrorText] = useState('');
   const [isCustomSystem, setIsCustomSystem] = useState(false);
@@ -120,7 +121,7 @@ export default function AccountsView({
       } catch (rollbackError) {
         console.error('Failed to rollback user permissions:', rollbackError);
       }
-      setSystemAlertMessage('ບໍ່ສາມາດບັນທຶກ/ລຶບຂໍ້ມູນຜູ້ໃຊ້ໄດ້. ກະລຸນາກວດເຊັກການເຊື່ອມຕໍ່ ແລ້ວລອງໃໝ່.');
+      setSystemAlertMessage('àºšà»à»ˆàºªàº²àº¡àº²àº”àºšàº±àº™àº—àº¶àº/àº¥àº¶àºšàº‚à»à»‰àº¡àº¹àº™àºœàº¹à»‰à»ƒàºŠà»‰à»„àº”à»‰. àºàº°àº¥àº¸àº™àº²àºàº§àº”à»€àºŠàº±àºàºàº²àº™à»€àºŠàº·à»ˆàº­àº¡àº•à»à»ˆ à»àº¥à»‰àº§àº¥àº­àº‡à»ƒà»à»ˆ.');
     }
   };
 
@@ -165,41 +166,50 @@ export default function AccountsView({
   };
 
   const getVisiblePasswordValue = (user: UserAccount) => (
-    getStoredPasswordValue(user) || 'ບໍ່ມີລະຫັດ'
+    getStoredPasswordValue(user) || 'àºšà»à»ˆàº¡àºµàº¥àº°àº«àº±àº”'
   );
-
-  const handleAvatarFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setErrorText('àºàº°àº¥àº¸àº™àº²à»€àº¥àº·àº­àºà»„àºŸàº¥à»Œàº®àº¹àºšàºžàº²àºšà»€àº—àº»à»ˆàº²àº™àº±à»‰àº™');
+      setErrorText('Please select an image file only.');
       event.target.value = '';
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setImage(reader.result);
-        setErrorText('');
-      }
-    };
-    reader.onerror = () => {
-      setErrorText('àºšà»à»ˆàºªàº²àº¡àº²àº”àº­à»ˆàº²àº™à»„àºŸàº¥à»Œàº®àº¹àºš User à»„àº”à»‰');
-    };
-    reader.readAsDataURL(file);
+
+    try {
+      const rawId = username.trim() || `user-avatar-${Date.now()}`;
+      const safeUserId = rawId
+        .normalize('NFKC')
+        .toLocaleLowerCase('en-US')
+        .replace(/[^a-z0-9._-]/gi, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '') || `user-avatar-${Date.now()}`;
+      const uploaded = await uploadCentralFile(file, {
+        fileName: `${safeUserId}-${file.name}`,
+        entityType: 'users',
+        entityId: safeUserId,
+      });
+      setImage(uploaded.url);
+      setErrorText('');
+    } catch (error) {
+      console.error('Failed to upload user avatar to R2:', error);
+      setErrorText('Unable to upload the user image to R2. Please sign in to Production and try again.');
+      event.target.value = '';
+    }
   };
 
   // Search filter for Branches/Divisions
   const filteredBranches = branches.filter(item => 
-    item.ສາຂາ.toLowerCase().includes(branchSearchTerm.toLowerCase()) ||
-    (item["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || "").toLowerCase().includes(branchSearchTerm.toLowerCase())
+    item["àºªàº²àº‚àº²"].toLowerCase().includes(branchSearchTerm.toLowerCase()) ||
+    (item["àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™"] || "").toLowerCase().includes(branchSearchTerm.toLowerCase())
   );
 
   // Search filter for Checklist items
   const filteredChecklistItems = checklistItems.filter((item: any) => {
-    const matchesSearch = item.ລະບົບທີ່ກວດ.toLowerCase().includes(checklistSearchTerm.toLowerCase()) ||
-      item.ໝວດລະບົບກວດ.toLowerCase().includes(checklistSearchTerm.toLowerCase()) ||
-      item.ລາຍການກວດ.toLowerCase().includes(checklistSearchTerm.toLowerCase());
+    const matchesSearch = item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"].toLowerCase().includes(checklistSearchTerm.toLowerCase()) ||
+      item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"].toLowerCase().includes(checklistSearchTerm.toLowerCase()) ||
+      item["àº¥àº²àºàºàº²àº™àºàº§àº”"].toLowerCase().includes(checklistSearchTerm.toLowerCase());
     const matchesFormType = checklistFormTypeFilter === 'ALL' || 
       (item.Form_Type && item.Form_Type.trim() === checklistFormTypeFilter.trim());
     return matchesSearch && matchesFormType;
@@ -212,24 +222,24 @@ export default function AccountsView({
     //
     // Cleaned up end block
 
-  const uniqueBranches = Array.from(new Set(branches.map(b => b.ສາຂາ))).sort();
+  const uniqueBranches = Array.from(new Set(branches.map(b => b["àºªàº²àº‚àº²"]))).sort();
 
   // Define full list of functional tabs
   const AVAILABLE_TABS = [
-    { id: 'dashboard', label: 'ແຜງຄວບຄຸມ (Dashboard Monitor)' },
-    { id: 'pm', label: 'ການບຳລຸງຮັກສາ (Preventive Maintenance)' },
-    { id: 'inspections', label: 'ການກວດກາອາຄານ (Inspections)' },
-    { id: 'incidents', label: 'ທະບຽນເຫດການ & ຄວາມສ່ຽງ (Incidents)' },
-    { id: 'approvals', label: 'ລາຍການອະນຸມັດສ້ອມແປງ (Repair Approvals)' },
-    { id: 'tracking', label: 'ຕິດຕາມການສ້ອມແປງ (Repair Tracking)' },
-    { id: 'repairs', label: 'ປະຫວັດການສ້ອມແປງ (Repair Logs)' },
-    { id: 'accounts', label: 'ຈັດການສິດຜູ້ໃຊ້ (User Permissions)' }
+    { id: 'dashboard', label: 'à»àºœàº‡àº„àº§àºšàº„àº¸àº¡ (Dashboard Monitor)' },
+    { id: 'pm', label: 'àºàº²àº™àºšàº³àº¥àº¸àº‡àº®àº±àºàºªàº² (Preventive Maintenance)' },
+    { id: 'inspections', label: 'àºàº²àº™àºàº§àº”àºàº²àº­àº²àº„àº²àº™ (Inspections)' },
+    { id: 'incidents', label: 'àº—àº°àºšàº½àº™à»€àº«àº”àºàº²àº™ & àº„àº§àº²àº¡àºªà»ˆàº½àº‡ (Incidents)' },
+    { id: 'approvals', label: 'àº¥àº²àºàºàº²àº™àº­àº°àº™àº¸àº¡àº±àº”àºªà»‰àº­àº¡à»àº›àº‡ (Repair Approvals)' },
+    { id: 'tracking', label: 'àº•àº´àº”àº•àº²àº¡àºàº²àº™àºªà»‰àº­àº¡à»àº›àº‡ (Repair Tracking)' },
+    { id: 'repairs', label: 'àº›àº°àº«àº§àº±àº”àºàº²àº™àºªà»‰àº­àº¡à»àº›àº‡ (Repair Logs)' },
+    { id: 'accounts', label: 'àºˆàº±àº”àºàº²àº™àºªàº´àº”àºœàº¹à»‰à»ƒàºŠà»‰ (User Permissions)' }
   ];
 
   const toggleTabPermission = (tabId: string) => {
     if (allowedTabs.includes(tabId)) {
       if (editingIndex !== null && users[editingIndex].username === currentUser.username && tabId === 'accounts') {
-        setSystemAlertMessage("ທ່ານບໍ່ສາມາດປິດສິດທິໃນການເຂົ້າເຖິງ ໜ້າຈັດການສິດຜູ້ໃຊ້ ຂອງຕົວທ່ານເອງໄດ້!");
+        setSystemAlertMessage("àº—à»ˆàº²àº™àºšà»à»ˆàºªàº²àº¡àº²àº”àº›àº´àº”àºªàº´àº”àº—àº´à»ƒàº™àºàº²àº™à»€àº‚àº»à»‰àº²à»€àº–àº´àº‡ à»œà»‰àº²àºˆàº±àº”àºàº²àº™àºªàº´àº”àºœàº¹à»‰à»ƒàºŠà»‰ àº‚àº­àº‡àº•àº»àº§àº—à»ˆàº²àº™à»€àº­àº‡à»„àº”à»‰!");
         return;
       }
       setAllowedTabs(allowedTabs.filter(id => id !== tabId));
@@ -266,7 +276,7 @@ export default function AccountsView({
 
   const handleDeleteUser = (userToDelete: UserAccount) => {
     if (userToDelete.username === currentUser.username) {
-      setSystemAlertMessage("ທ່ານບໍ່ສາມາດລົບ ບັນຊີທີ່ກຳລັງໃຊ້ງານຢູ່ (Your Own Account) ໄດ້!");
+      setSystemAlertMessage("àº—à»ˆàº²àº™àºšà»à»ˆàºªàº²àº¡àº²àº”àº¥àº»àºš àºšàº±àº™àºŠàºµàº—àºµà»ˆàºàº³àº¥àº±àº‡à»ƒàºŠà»‰àº‡àº²àº™àº¢àº¹à»ˆ (Your Own Account) à»„àº”à»‰!");
       return;
     }
     setDeleteUserConfirm(userToDelete);
@@ -278,7 +288,7 @@ export default function AccountsView({
     const previousUsers = users;
     const remainingUsers = users.filter(u => u.username !== targetUser.username);
     setDeleteUserConfirm(null);
-    await persistUserList(remainingUsers, `ລົບຂໍ້ມູນຜູ້ໃຊ້ "${targetUser.username}" ສຳເລັດ!`, previousUsers);
+    await persistUserList(remainingUsers, `àº¥àº»àºšàº‚à»à»‰àº¡àº¹àº™àºœàº¹à»‰à»ƒàºŠà»‰ "${targetUser.username}" àºªàº³à»€àº¥àº±àº”!`, previousUsers);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -286,12 +296,12 @@ export default function AccountsView({
     setErrorText('');
 
     if (!username.trim() || !branch || (editingIndex === null && !password.trim())) {
-      setErrorText('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ');
+      setErrorText('àºàº°àº¥àº¸àº™àº²àº›à»‰àº­àº™àº‚à»à»‰àº¡àº¹àº™à»ƒàº«à»‰àº„àº»àºšàº–à»‰àº§àº™');
       return;
     }
 
     if (allowedTabs.length === 0) {
-      setErrorText('ກະລຸນາເລືອກຢ່າງໜ້ອຍ 1 ຟັງຊັນທີ່ສາມາດເຂົ້າເຖິງໄດ້');
+      setErrorText('àºàº°àº¥àº¸àº™àº²à»€àº¥àº·àº­àºàº¢à»ˆàº²àº‡à»œà»‰àº­àº 1 àºŸàº±àº‡àºŠàº±àº™àº—àºµà»ˆàºªàº²àº¡àº²àº”à»€àº‚àº»à»‰àº²à»€àº–àº´àº‡à»„àº”à»‰');
       return;
     }
 
@@ -312,7 +322,7 @@ export default function AccountsView({
     if (editingIndex === null) {
       const exists = users.some(u => u.username.toLowerCase() === cleanedUsername.toLowerCase());
       if (exists) {
-        setErrorText(`ຊື່ຜູ້ໃຊ້ "${cleanedUsername}" ມີໃນລະບົບແລ້ວ! ກະລຸນາປ້ອນຊື່ອື່ນ`);
+        setErrorText(`àºŠàº·à»ˆàºœàº¹à»‰à»ƒàºŠà»‰ "${cleanedUsername}" àº¡àºµà»ƒàº™àº¥àº°àºšàº»àºšà»àº¥à»‰àº§! àºàº°àº¥àº¸àº™àº²àº›à»‰àº­àº™àºŠàº·à»ˆàº­àº·à»ˆàº™`);
         return;
       }
       updatedList = [updatedUserObj, ...updatedList];
@@ -322,7 +332,7 @@ export default function AccountsView({
         idx !== editingIndex && u.username.toLowerCase() === cleanedUsername.toLowerCase()
       );
       if (existsInOthers) {
-        setErrorText(`ຊື່ຜູ້ໃຊ້ "${cleanedUsername}" ມີໃນລະບົບແລ້ວ!`);
+        setErrorText(`àºŠàº·à»ˆàºœàº¹à»‰à»ƒàºŠà»‰ "${cleanedUsername}" àº¡àºµà»ƒàº™àº¥àº°àºšàº»àºšà»àº¥à»‰àº§!`);
         return;
       }
 
@@ -334,7 +344,7 @@ export default function AccountsView({
     }
 
     setIsOpen(false);
-    await persistUserList(updatedList, `ບັນທຶກບັນຊີຜູ້ໃຊ້ "${cleanedUsername}" ສຳເລັດ!`, users);
+    await persistUserList(updatedList, `àºšàº±àº™àº—àº¶àºàºšàº±àº™àºŠàºµàºœàº¹à»‰à»ƒàºŠà»‰ "${cleanedUsername}" àºªàº³à»€àº¥àº±àº”!`, users);
   };
 
   // Add Branch / Division logic
@@ -346,26 +356,26 @@ export default function AccountsView({
     const formattedDivision = newDivisionInput.trim();
 
     if (!formattedBranch || !formattedDivision) {
-      setBranchErrorText('ກະລຸນາກວດສອບ: ຕ້ອງປ້ອນຂໍ້ມູນທັງ ຊື່ສາຂາ ແລະ ຝ່າຍ/ໜ່ວຍບໍລິການ');
+      setBranchErrorText('àºàº°àº¥àº¸àº™àº²àºàº§àº”àºªàº­àºš: àº•à»‰àº­àº‡àº›à»‰àº­àº™àº‚à»à»‰àº¡àº¹àº™àº—àº±àº‡ àºŠàº·à»ˆàºªàº²àº‚àº² à»àº¥àº° àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™');
       return;
     }
 
     // Check duplicate
     const isDuplicate = branches.some(
-      b => b.ສາຂາ === formattedBranch && b["ຝ່າຍ/ໜ່ວຍບໍລິການ"] === formattedDivision
+      b => b["àºªàº²àº‚àº²"] === formattedBranch && b["àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™"] === formattedDivision
     );
 
     if (isDuplicate) {
-      setBranchErrorText('ຂໍ້ມູນສາຂາ ແລະ ຝ່າຍ/ໜ່ວຍບໍລິການ ນີ້ມີກຳນົດຢູ່ແລ້ວ!');
+      setBranchErrorText('àº‚à»à»‰àº¡àº¹àº™àºªàº²àº‚àº² à»àº¥àº° àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™ àº™àºµà»‰àº¡àºµàºàº³àº™àº»àº”àº¢àº¹à»ˆà»àº¥à»‰àº§!');
       return;
     }
 
-    const nextId = branches.reduce((max, cur) => cur.ລຳດັບ > max ? cur.ລຳດັບ : max, 0) + 1;
+    const nextId = branches.reduce((max, cur) => cur["àº¥àº³àº”àº±àºš"] > max ? cur["àº¥àº³àº”àº±àºš"] : max, 0) + 1;
     
     const newBranchObj: BranchInfo = {
-      "ລຳດັບ": nextId,
-      "ສາຂາ": formattedBranch,
-      "ຝ່າຍ/ໜ່ວຍບໍລິການ": formattedDivision
+      "àº¥àº³àº”àº±àºš": nextId,
+      "àºªàº²àº‚àº²": formattedBranch,
+      "àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™": formattedDivision
     };
 
     const updatedBranches = [newBranchObj, ...branches];
@@ -376,7 +386,7 @@ export default function AccountsView({
     setBranchErrorText('');
     
     // Quick transient notification
-    triggerToast(`ເພີ່ມຂໍ້ມູນ "${formattedBranch}" - "${formattedDivision}" ສຳເລັດ!`);
+    triggerToast(`à»€àºžàºµà»ˆàº¡àº‚à»à»‰àº¡àº¹àº™ "${formattedBranch}" - "${formattedDivision}" àºªàº³à»€àº¥àº±àº”!`);
   };
 
   // Delete Branch / Division row
@@ -389,17 +399,17 @@ export default function AccountsView({
     const targetBranch = deleteBranchConfirm;
     const previousBranches = branches;
     const remainingBranches = branches.filter(
-      item => !(item.ສາຂາ === targetBranch.ສາຂາ && item["ຝ່າຍ/ໜ່ວຍບໍລິການ"] === targetBranch["ຝ່າຍ/ໜ່ວຍບໍລິການ"])
+      item => !(item["àºªàº²àº‚àº²"] === targetBranch["àºªàº²àº‚àº²"] && item["àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™"] === targetBranch["àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™"])
     );
 
     setDeleteBranchConfirm(null);
     try {
       await onSaveBranches(remainingBranches);
-      triggerToast("ລົບຂໍ້ມູນສາຂາ/ໜ່ວຍງານສຳເລັດ!");
+      triggerToast("àº¥àº»àºšàº‚à»à»‰àº¡àº¹àº™àºªàº²àº‚àº²/à»œà»ˆàº§àºàº‡àº²àº™àºªàº³à»€àº¥àº±àº”!");
     } catch (error) {
       console.error('Failed to delete branch/division:', error);
       await onSaveBranches(previousBranches);
-      setSystemAlertMessage('ບໍ່ສາມາດລຶບຂໍ້ມູນສາຂາ/ໜ່ວຍງານໄດ້. ກະລຸນາລອງໃໝ່.');
+      setSystemAlertMessage('àºšà»à»ˆàºªàº²àº¡àº²àº”àº¥àº¶àºšàº‚à»à»‰àº¡àº¹àº™àºªàº²àº‚àº²/à»œà»ˆàº§àºàº‡àº²àº™à»„àº”à»‰. àºàº°àº¥àº¸àº™àº²àº¥àº­àº‡à»ƒà»à»ˆ.');
     }
   };
 
@@ -411,22 +421,22 @@ export default function AccountsView({
     const formattedSector = newSectorInput.trim();
 
     if (!formattedSector) {
-      setSectorErrorText('ກະລຸນາປ້ອນຊື່ຂະແໜງ');
+      setSectorErrorText('àºàº°àº¥àº¸àº™àº²àº›à»‰àº­àº™àºŠàº·à»ˆàº‚àº°à»à»œàº‡');
       return;
     }
 
     // Check duplicate
     const isDuplicate = sectors.some(
-      s => s.ຂະແໜງ.toLowerCase() === formattedSector.toLowerCase()
+      s => s["àº‚àº°à»à»œàº‡"].toLowerCase() === formattedSector.toLowerCase()
     );
 
     if (isDuplicate) {
-      setSectorErrorText('ຂໍ້ມູນຂະແໜງນີ້ມີ ກຳນົດຢູ່ແລ້ວ!');
+      setSectorErrorText('àº‚à»à»‰àº¡àº¹àº™àº‚àº°à»à»œàº‡àº™àºµà»‰àº¡àºµ àºàº³àº™àº»àº”àº¢àº¹à»ˆà»àº¥à»‰àº§!');
       return;
     }
 
     const newSectorObj: SectorInfo = {
-      ຂະແໜງ: formattedSector
+      "àº‚àº°à»à»œàº‡": formattedSector
     };
 
     const updatedSectors = [newSectorObj, ...sectors];
@@ -434,7 +444,7 @@ export default function AccountsView({
 
     setNewSectorInput('');
     setSectorErrorText('');
-    triggerToast(`ເພີ່ມຂໍ້ມູນຂະແໜງ "${formattedSector}" ສຳເລັດ!`);
+    triggerToast(`à»€àºžàºµà»ˆàº¡àº‚à»à»‰àº¡àº¹àº™àº‚àº°à»à»œàº‡ "${formattedSector}" àºªàº³à»€àº¥àº±àº”!`);
   };
 
   const handleDeleteSector = (itemToDelete: SectorInfo) => {
@@ -446,34 +456,34 @@ export default function AccountsView({
     const targetSector = deleteSectorConfirm;
     const previousSectors = sectors;
     const remainingSectors = sectors.filter(
-      item => item.ຂະແໜງ !== targetSector.ຂະແໜງ
+      item => item["àº‚àº°à»à»œàº‡"] !== targetSector["àº‚àº°à»à»œàº‡"]
     );
 
     setDeleteSectorConfirm(null);
     try {
       await onSaveSectors(remainingSectors);
-      triggerToast("ລົບຂໍ້ມູນຂະແໜງສຳເລັດ!");
+      triggerToast("àº¥àº»àºšàº‚à»à»‰àº¡àº¹àº™àº‚àº°à»à»œàº‡àºªàº³à»€àº¥àº±àº”!");
     } catch (error) {
       console.error('Failed to delete sector:', error);
       await onSaveSectors(previousSectors);
-      setSystemAlertMessage('ບໍ່ສາມາດລຶບຂໍ້ມູນຂະແໜງໄດ້. ກະລຸນາລອງໃໝ່.');
+      setSystemAlertMessage('àºšà»à»ˆàºªàº²àº¡àº²àº”àº¥àº¶àºšàº‚à»à»‰àº¡àº¹àº™àº‚àº°à»à»œàº‡à»„àº”à»‰. àºàº°àº¥àº¸àº™àº²àº¥àº­àº‡à»ƒà»à»ˆ.');
     }
   };
 
   // Checklist Item management handlers
   const handleEditChecklistItemClick = (item: ChecklistItem) => {
     setEditingChecklistItem(item);
-    setNewChecklistSystem(item.ລະບົບທີ່ກວດ);
-    setNewChecklistCategory(item.ໝວດລະບົບກວດ);
-    setNewChecklistInspection(item.ລາຍການກວດ);
-    setNewChecklistFormType(item.Form_Type || 'ສາຂາ');
+    setNewChecklistSystem(item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"]);
+    setNewChecklistCategory(item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"]);
+    setNewChecklistInspection(item["àº¥àº²àºàºàº²àº™àºàº§àº”"]);
+    setNewChecklistFormType(item.Form_Type || 'àºªàº²àº‚àº²');
     setChecklistErrorText('');
 
-    const standardSystems = Array.from(new Set(checklistItems.map(i => i.ລະບົບທີ່ກວດ)));
-    const standardCategories = Array.from(new Set(checklistItems.map(i => i.ໝວດລະບົບກວດ)));
+    const standardSystems = Array.from(new Set(checklistItems.map(i => i["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"])));
+    const standardCategories = Array.from(new Set(checklistItems.map(i => i["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"])));
 
-    setIsCustomSystem(!standardSystems.includes(item.ລະບົບທີ່ກວດ));
-    setIsCustomCategory(!standardCategories.includes(item.ໝວດລະບົບກວດ));
+    setIsCustomSystem(!standardSystems.includes(item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"]));
+    setIsCustomCategory(!standardCategories.includes(item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"]));
   };
 
   const handleCancelEditChecklistItem = () => {
@@ -481,7 +491,7 @@ export default function AccountsView({
     setNewChecklistSystem('');
     setNewChecklistCategory('');
     setNewChecklistInspection('');
-    setNewChecklistFormType('ສາຂາ');
+    setNewChecklistFormType('àºªàº²àº‚àº²');
     setIsCustomSystem(false);
     setIsCustomCategory(false);
     setChecklistErrorText('');
@@ -496,15 +506,15 @@ export default function AccountsView({
     const itemDetail = newChecklistInspection.trim();
 
     if (!sys) {
-      setChecklistErrorText('ກະລຸນາເລືອກ ຫຼື ປ້ອນ ລະບົບທີ່ກວດ (System Category)');
+      setChecklistErrorText('àºàº°àº¥àº¸àº™àº²à»€àº¥àº·àº­àº àº«àº¼àº· àº›à»‰àº­àº™ àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº” (System Category)');
       return;
     }
     if (!cat) {
-      setChecklistErrorText('ກະລຸນາເລືອກ ຫຼື ປ້ອນ ພື້ນທີ່/ຈຸດກວດ ( Area / Point)');
+      setChecklistErrorText('àºàº°àº¥àº¸àº™àº²à»€àº¥àº·àº­àº àº«àº¼àº· àº›à»‰àº­àº™ àºžàº·à»‰àº™àº—àºµà»ˆ/àºˆàº¸àº”àºàº§àº” ( Area / Point)');
       return;
     }
     if (!itemDetail) {
-      setChecklistErrorText('ກະລຸນາປ້ອນ ລາຍການກວດກາ (Inspection Item)');
+      setChecklistErrorText('àºàº°àº¥àº¸àº™àº²àº›à»‰àº­àº™ àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² (Inspection Item)');
       return;
     }
 
@@ -512,14 +522,14 @@ export default function AccountsView({
     const isDuplicate = checklistItems.some(
       item => 
         item !== editingChecklistItem &&
-        item.ລະບົບທີ່ກວດ.trim().toLowerCase() === sys.toLowerCase() &&
-        item.ໝວດລະບົບກວດ.trim().toLowerCase() === cat.toLowerCase() &&
-        item.ລາຍການກວດ.trim().toLowerCase() === itemDetail.toLowerCase() &&
-        (item.Form_Type || 'ສາຂາ').trim().toLowerCase() === newChecklistFormType.trim().toLowerCase()
+        item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"].trim().toLowerCase() === sys.toLowerCase() &&
+        item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"].trim().toLowerCase() === cat.toLowerCase() &&
+        item["àº¥àº²àºàºàº²àº™àºàº§àº”"].trim().toLowerCase() === itemDetail.toLowerCase() &&
+        (item.Form_Type || 'àºªàº²àº‚àº²').trim().toLowerCase() === newChecklistFormType.trim().toLowerCase()
     );
 
     if (isDuplicate) {
-      setChecklistErrorText('ລາຍການກວດການີ້ມີຢູ່ໃນຟອມນີ້ແລ້ວ!');
+      setChecklistErrorText('àº¥àº²àºàºàº²àº™àºàº§àº”àºàº²àº™àºµà»‰àº¡àºµàº¢àº¹à»ˆà»ƒàº™àºŸàº­àº¡àº™àºµà»‰à»àº¥à»‰àº§!');
       return;
     }
 
@@ -528,9 +538,9 @@ export default function AccountsView({
         if (item === editingChecklistItem) {
           return {
             ...item,
-            ລະບົບທີ່ກວດ: sys,
-            ໝວດລະບົບກວດ: cat,
-            ລາຍການກວດ: itemDetail,
+            "àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”": sys,
+            "à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”": cat,
+            "àº¥àº²àºàºàº²àº™àºàº§àº”": itemDetail,
             Form_Type: newChecklistFormType,
           };
         }
@@ -541,12 +551,12 @@ export default function AccountsView({
       setNewChecklistInspection('');
       setIsCustomSystem(false);
       setIsCustomCategory(false);
-      triggerToast(`ແກ້ໄຂລາຍການກວດກາ "${itemDetail}" ສຳເລັດ!`);
+      triggerToast(`à»àºà»‰à»„àº‚àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² "${itemDetail}" àºªàº³à»€àº¥àº±àº”!`);
     } else {
       const newItem: ChecklistItem = {
-        ລະບົບທີ່ກວດ: sys,
-        ໝວດລະບົບກວດ: cat,
-        ລາຍການກວດ: itemDetail,
+        "àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”": sys,
+        "à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”": cat,
+        "àº¥àº²àºàºàº²àº™àºàº§àº”": itemDetail,
         Form_Type: newChecklistFormType,
       };
 
@@ -556,7 +566,7 @@ export default function AccountsView({
       setNewChecklistInspection('');
       setIsCustomSystem(false);
       setIsCustomCategory(false);
-      triggerToast(`ເພີ່ມລາຍການກວດກາ "${itemDetail}" ສຳເລັດ!`);
+      triggerToast(`à»€àºžàºµà»ˆàº¡àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² "${itemDetail}" àºªàº³à»€àº¥àº±àº”!`);
     }
   };
 
@@ -570,19 +580,19 @@ export default function AccountsView({
     const previousChecklistItems = checklistItems;
     const remaining = checklistItems.filter(
       item => !(
-        item.ລະບົບທີ່ກວດ === targetChecklistItem.ລະບົບທີ່ກວດ &&
-        item.ໝວດລະບົບກວດ === targetChecklistItem.ໝວດລະບົບກວດ &&
-        item.ລາຍການກວດ === targetChecklistItem.ລາຍການກວດ
+        item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"] === targetChecklistItem["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"] &&
+        item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"] === targetChecklistItem["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"] &&
+        item["àº¥àº²àºàºàº²àº™àºàº§àº”"] === targetChecklistItem["àº¥àº²àºàºàº²àº™àºàº§àº”"]
       )
     );
     setDeleteChecklistItemConfirm(null);
     try {
       await onSaveChecklistItems(remaining);
-      triggerToast('ລົບລາຍການກວດກາກຳນົດສຳເລັດ!');
+      triggerToast('àº¥àº»àºšàº¥àº²àºàºàº²àº™àºàº§àº”àºàº²àºàº³àº™àº»àº”àºªàº³à»€àº¥àº±àº”!');
     } catch (error) {
       console.error('Failed to delete checklist item:', error);
       await onSaveChecklistItems(previousChecklistItems);
-      setSystemAlertMessage('ບໍ່ສາມາດລຶບລາຍການກວດກາໄດ້. ກະລຸນາລອງໃໝ່.');
+      setSystemAlertMessage('àºšà»à»ˆàºªàº²àº¡àº²àº”àº¥àº¶àºšàº¥àº²àºàºàº²àº™àºàº§àº”àºàº²à»„àº”à»‰. àºàº°àº¥àº¸àº™àº²àº¥àº­àº‡à»ƒà»à»ˆ.');
     }
   };
 
@@ -595,18 +605,18 @@ export default function AccountsView({
     setShowResetConfirm(false);
     try {
       await onSaveChecklistItems(CHECKLIST_ITEMS);
-      triggerToast('ຣີເຊັດລາຍການກວດກາທັງໝົດເປັນຄ່າເລີ່ມຕົ້ນສຳເລັດ!');
+      triggerToast('àº£àºµà»€àºŠàº±àº”àº¥àº²àºàºàº²àº™àºàº§àº”àºàº²àº—àº±àº‡à»àº»àº”à»€àº›àº±àº™àº„à»ˆàº²à»€àº¥àºµà»ˆàº¡àº•àº»à»‰àº™àºªàº³à»€àº¥àº±àº”!');
     } catch (error) {
       console.error('Failed to reset checklist items:', error);
       await onSaveChecklistItems(previousChecklistItems);
-      setSystemAlertMessage('ບໍ່ສາມາດຣີເຊັດລາຍການກວດກາໄດ້. ກະລຸນາລອງໃໝ່.');
+      setSystemAlertMessage('àºšà»à»ˆàºªàº²àº¡àº²àº”àº£àºµà»€àºŠàº±àº”àº¥àº²àºàºàº²àº™àºàº§àº”àºàº²à»„àº”à»‰. àºàº°àº¥àº¸àº™àº²àº¥àº­àº‡à»ƒà»à»ˆ.');
     }
   };
 
   const handleSavePreset = (e: React.FormEvent) => {
     e.preventDefault();
     if (!presetSparePart.trim() || !presetSubItem.trim() || !presetUnit.trim()) {
-      setPresetError('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ');
+      setPresetError('àºàº°àº¥àº¸àº™àº²àº›à»‰àº­àº™àº‚à»à»‰àº¡àº¹àº™à»ƒàº«à»‰àº„àº»àºšàº–à»‰àº§àº™');
       return;
     }
     
@@ -618,7 +628,7 @@ export default function AccountsView({
     );
     
     if (duplicate) {
-      setPresetError('ມີຂໍ້ມູນ Mapping ຂອງອະໄຫຼ່ ແລະ ລາຍການສ້ອມນີ້ໃນໝວດນີ້ຢູ່ແລ້ວ (ຫ້າມສ້າງ Master Data ຊ້ຳ)');
+      setPresetError('àº¡àºµàº‚à»à»‰àº¡àº¹àº™ Mapping àº‚àº­àº‡àº­àº°à»„àº«àº¼à»ˆ à»àº¥àº° àº¥àº²àºàºàº²àº™àºªà»‰àº­àº¡àº™àºµà»‰à»ƒàº™à»àº§àº”àº™àºµà»‰àº¢àº¹à»ˆà»àº¥à»‰àº§ (àº«à»‰àº²àº¡àºªà»‰àº²àº‡ Master Data àºŠà»‰àº³)');
       return;
     }
     
@@ -638,7 +648,7 @@ export default function AccountsView({
         }
         return p;
       });
-      triggerToast('ແກ້ໄຂແຜນຜັງ Mapping ສຳເລັດ!');
+      triggerToast('à»àºà»‰à»„àº‚à»àºœàº™àºœàº±àº‡ Mapping àºªàº³à»€àº¥àº±àº”!');
     } else {
       const newPreset: RepairPreset = {
         id: 'p_' + Date.now(),
@@ -650,7 +660,7 @@ export default function AccountsView({
         estimatedUnitCost: Number(presetPrice) || 0
       };
       updated = [newPreset, ...repairPresets];
-      triggerToast('ເພີ່ມແຜນຜັງ Mapping ໃໝ່ສຳເລັດ!');
+      triggerToast('à»€àºžàºµà»ˆàº¡à»àºœàº™àºœàº±àº‡ Mapping à»ƒà»à»ˆàºªàº³à»€àº¥àº±àº”!');
     }
     
     setRepairPresets(updated);
@@ -660,11 +670,11 @@ export default function AccountsView({
     setEditingPresetId(null);
     setPresetSparePart('');
     setPresetSubItem('');
-    setPresetUnit('ອັນ');
+    setPresetUnit('àº­àº±àº™');
     setPresetPrice(0);
     setPresetError('');
     setIsCustomSubCategory(false);
-    setPresetSubCategory('ລະບົບໄຟຟ້າ');
+    setPresetSubCategory('àº¥àº°àºšàº»àºšà»„àºŸàºŸà»‰àº²');
   };
 
   const handleEditPresetClick = (p: RepairPreset) => {
@@ -678,43 +688,43 @@ export default function AccountsView({
     setPresetError('');
     
     const standardCategories = [
-      "ລະບົບໄຟຟ້າ",
-      "ລະບົບນໍ้าປະປາ & ສຸຂະພັນ",
-      "ລະບົບເຄື່ອງປັບອາກາດ",
-      "ລະບົບເຄືອຂ່າຍ & IT",
-      "ລະບົບປ້ອງກັນອັກຄີໄພ",
-      "ລະບົບໂຄງສ້າງ ແລະ ອາຄານ",
-      "ຊັບສິນ",
-      "ອື່ນໆ"
+      "àº¥àº°àºšàº»àºšà»„àºŸàºŸà»‰àº²",
+      "àº¥àº°àºšàº»àºšàº™à»à¹‰à¸²àº›àº°àº›àº² & àºªàº¸àº‚àº°àºžàº±àº™",
+      "àº¥àº°àºšàº»àºšà»€àº„àº·à»ˆàº­àº‡àº›àº±àºšàº­àº²àºàº²àº”",
+      "àº¥àº°àºšàº»àºšà»€àº„àº·àº­àº‚à»ˆàº²àº & IT",
+      "àº¥àº°àºšàº»àºšàº›à»‰àº­àº‡àºàº±àº™àº­àº±àºàº„àºµà»„àºž",
+      "àº¥àº°àºšàº»àºšà»‚àº„àº‡àºªà»‰àº²àº‡ à»àº¥àº° àº­àº²àº„àº²àº™",
+      "àºŠàº±àºšàºªàº´àº™",
+      "àº­àº·à»ˆàº™à»†"
     ];
     setIsCustomSubCategory(!standardCategories.includes(p.repairSubCategory));
   };
 
   const handleDeletePresetClick = (id: string) => {
-    if (!window.confirm('ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລົບແຜນຜັງ Mapping ນີ້?')) return;
+    if (!window.confirm('àº—à»ˆàº²àº™à»àº™à»ˆà»ƒàºˆàºšà»à»ˆàº§à»ˆàº²àº•à»‰àº­àº‡àºàº²àº™àº¥àº»àºšà»àºœàº™àºœàº±àº‡ Mapping àº™àºµà»‰?')) return;
     const updated = repairPresets.filter(p => p.id !== id);
     setRepairPresets(updated);
     saveRepairPresets(updated);
-    triggerToast('ລົບແຜນຜັງ Mapping ສຳເລັດ!');
+    triggerToast('àº¥àº»àºšà»àºœàº™àºœàº±àº‡ Mapping àºªàº³à»€àº¥àº±àº”!');
   };
 
   const handleResetPresetsToDefault = () => {
-    if (window.confirm('ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຣີເຊັດແຜນຜັງ Mapping ທັງໝົດເປັນຄ່າເລີ່ມຕົ້ນ?')) {
+    if (window.confirm('àº—à»ˆàº²àº™à»àº™à»ˆà»ƒàºˆàºšà»à»ˆàº§à»ˆàº²àº•à»‰àº­àº‡àºàº²àº™àº£àºµà»€àºŠàº±àº”à»àºœàº™àºœàº±àº‡ Mapping àº—àº±àº‡à»àº»àº”à»€àº›àº±àº™àº„à»ˆàº²à»€àº¥àºµà»ˆàº¡àº•àº»à»‰àº™?')) {
       setRepairPresets(DEFAULT_REPAIR_PRESETS);
       saveRepairPresets(DEFAULT_REPAIR_PRESETS);
-      triggerToast('ຣີເຊັດແຜນຜັງ Mapping ເປັນຄ່າເລີ່ມຕົ້ນສຳເລັດ!');
+      triggerToast('àº£àºµà»€àºŠàº±àº”à»àºœàº™àºœàº±àº‡ Mapping à»€àº›àº±àº™àº„à»ˆàº²à»€àº¥àºµà»ˆàº¡àº•àº»à»‰àº™àºªàº³à»€àº¥àº±àº”!');
     }
   };
 
   const uniqueSubCategories = Array.from(new Set([
-    "ລະບົບໄຟຟ້າ",
-    "ລະບົບນໍ້າປະປາ & ສຸຂະພັນ",
-    "ລະບົບເຄື່ອງປັບອາກາດ",
-    "ລະບົບເຄືອຂ່າຍ & IT",
-    "ລະບົບປ້ອງກັນອັກຄີໄພ",
-    "ລະບົບໂຄງສ້າງ ແລະ ອາຄານ",
-    "ຊັບສິນ",
-    "ອື່ນໆ",
+    "àº¥àº°àºšàº»àºšà»„àºŸàºŸà»‰àº²",
+    "àº¥àº°àºšàº»àºšàº™à»à»‰àº²àº›àº°àº›àº² & àºªàº¸àº‚àº°àºžàº±àº™",
+    "àº¥àº°àºšàº»àºšà»€àº„àº·à»ˆàº­àº‡àº›àº±àºšàº­àº²àºàº²àº”",
+    "àº¥àº°àºšàº»àºšà»€àº„àº·àº­àº‚à»ˆàº²àº & IT",
+    "àº¥àº°àºšàº»àºšàº›à»‰àº­àº‡àºàº±àº™àº­àº±àºàº„àºµà»„àºž",
+    "àº¥àº°àºšàº»àºšà»‚àº„àº‡àºªà»‰àº²àº‡ à»àº¥àº° àº­àº²àº„àº²àº™",
+    "àºŠàº±àºšàºªàº´àº™",
+    "àº­àº·à»ˆàº™à»†",
     ...repairPresets.map(p => p.repairSubCategory).filter(Boolean)
   ]));
 
@@ -725,10 +735,10 @@ export default function AccountsView({
         <div>
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <Shield className="h-6 w-6 text-emerald-800" />
-            ຈັດການລະບົບ & ຂໍ້ມູນພື້ນຖານ (System Administration)
+            àºˆàº±àº”àºàº²àº™àº¥àº°àºšàº»àºš & àº‚à»à»‰àº¡àº¹àº™àºžàº·à»‰àº™àº–àº²àº™ (System Administration)
           </h2>
           <p className="text-xs text-slate-500 mt-1 animate-fade-in">
-            ຈັດການບັນຊີຜູ້ໃຊ້, ກຳນົດສິດການເຂົ້າເຖິງແຕ່ລະໜ້າວຽກ, ແລະ ຕັ້ງຄ່າຂໍ້ມູນ ສາຂາ / ຝ່າຍ / ໜ່ວຍບໍລິການ ຂອງທະນາຄານ
+            àºˆàº±àº”àºàº²àº™àºšàº±àº™àºŠàºµàºœàº¹à»‰à»ƒàºŠà»‰, àºàº³àº™àº»àº”àºªàº´àº”àºàº²àº™à»€àº‚àº»à»‰àº²à»€àº–àº´àº‡à»àº•à»ˆàº¥àº°à»œà»‰àº²àº§àº½àº, à»àº¥àº° àº•àº±à»‰àº‡àº„à»ˆàº²àº‚à»à»‰àº¡àº¹àº™ àºªàº²àº‚àº² / àºà»ˆàº²àº / à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™ àº‚àº­àº‡àº—àº°àº™àº²àº„àº²àº™
           </p>
         </div>
 
@@ -738,22 +748,22 @@ export default function AccountsView({
             className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-md cursor-pointer transition flex items-center gap-1.5"
           >
             <UserPlus className="h-4 w-4" />
-            ເພີ່ມຜູ້ໃຊ້ໃໝ່ (Create Account)
+            à»€àºžàºµà»ˆàº¡àºœàº¹à»‰à»ƒàºŠà»‰à»ƒà»à»ˆ (Create Account)
           </button>
         ) : activeSubTab === 'checklist' ? (
           <div className="bg-emerald-50 border border-emerald-100 text-emerald-950 text-[11px] px-3.5 py-2 rounded-xl flex items-center gap-1.5 font-bold">
             <CheckSquare className="h-4 w-4 text-emerald-800" />
-            ຈັດການລາຍການກວດກາ & ລະບົບ
+            àºˆàº±àº”àºàº²àº™àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² & àº¥àº°àºšàº»àºš
           </div>
         ) : activeSubTab === 'sectors' ? (
           <div className="bg-emerald-50 border border-emerald-100 text-emerald-950 text-[11px] px-3.5 py-2 rounded-xl flex items-center gap-1.5 font-bold">
             <MapPin className="h-4 w-4 text-emerald-850" />
-            ຈັດການຂໍ້ມູນຂະແໜງ (Sectors)
+            àºˆàº±àº”àºàº²àº™àº‚à»à»‰àº¡àº¹àº™àº‚àº°à»à»œàº‡ (Sectors)
           </div>
         ) : (
           <div className="bg-amber-100 border border-amber-200 text-amber-950 text-[11px] px-3.5 py-2 rounded-xl flex items-center gap-1.5 font-bold">
             <Building className="h-4 w-4 text-emerald-800" />
-            ສິດທິສະເພາະ ຜູ້ດູແລລະບົບ (Admin Authorized)
+            àºªàº´àº”àº—àº´àºªàº°à»€àºžàº²àº° àºœàº¹à»‰àº”àº¹à»àº¥àº¥àº°àºšàº»àºš (Admin Authorized)
           </div>
         )}
       </div>
@@ -772,7 +782,7 @@ export default function AccountsView({
           }`}
         >
           <Users className="h-4 w-4" />
-          ຈັດການບັນຊີຜູ້ໃຊ້ ({users.length} ບັນຊີ)
+          àºˆàº±àº”àºàº²àº™àºšàº±àº™àºŠàºµàºœàº¹à»‰à»ƒàºŠà»‰ ({users.length} àºšàº±àº™àºŠàºµ)
         </button>
         <button
           onClick={() => setActiveSubTab('branches')}
@@ -783,7 +793,7 @@ export default function AccountsView({
           }`}
         >
           <Building className="h-4 w-4" />
-          ຈັດການ ສາຂา & ຝ່າຍ/ໜ່ວຍງານ ({branches.length} ລາຍການ)
+          àºˆàº±àº”àºàº²àº™ àºªàº²àº‚à¸² & àºà»ˆàº²àº/à»œà»ˆàº§àºàº‡àº²àº™ ({branches.length} àº¥àº²àºàºàº²àº™)
         </button>
         <button
           onClick={() => setActiveSubTab('checklist')}
@@ -794,7 +804,7 @@ export default function AccountsView({
           }`}
         >
           <CheckSquare className="h-4 w-4" />
-          ຈັດການ ລາຍການກວດກາ & ລະບົບ ({checklistItems.length} ລາຍການ)
+          àºˆàº±àº”àºàº²àº™ àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² & àº¥àº°àºšàº»àºš ({checklistItems.length} àº¥àº²àºàºàº²àº™)
         </button>
         <button
           onClick={() => setActiveSubTab('sectors')}
@@ -805,7 +815,7 @@ export default function AccountsView({
           }`}
         >
           <MapPin className="h-4 w-4" />
-          ຈັດການ ຂະແໜງ (Sectors) ({sectors.length} ລາຍການ)
+          àºˆàº±àº”àºàº²àº™ àº‚àº°à»à»œàº‡ (Sectors) ({sectors.length} àº¥àº²àºàºàº²àº™)
         </button>
         <button
           onClick={() => setActiveSubTab('repairPresets')}
@@ -816,7 +826,7 @@ export default function AccountsView({
           }`}
         >
           <Wrench className="h-4 w-4" />
-          ຈັດການແຜນຜັງ Mapping ({repairPresets.length} ລາຍການ)
+          àºˆàº±àº”àºàº²àº™à»àºœàº™àºœàº±àº‡ Mapping ({repairPresets.length} àº¥àº²àºàºàº²àº™)
         </button>
       </div>
 
@@ -831,7 +841,7 @@ export default function AccountsView({
               </span>
               <input
                 type="text"
-                placeholder="ຄົ້ນຫາຊື່ຜູ້ໃຊ້, ສາຂາ, ບົດບາດ..."
+                placeholder="àº„àº»à»‰àº™àº«àº²àºŠàº·à»ˆàºœàº¹à»‰à»ƒàºŠà»‰, àºªàº²àº‚àº², àºšàº»àº”àºšàº²àº”..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 border border-slate-350 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
@@ -848,7 +858,7 @@ export default function AccountsView({
                 Export Users
               </button>
               <div className="text-[11px] text-slate-500 font-mono">
-                ສະແດງທັງໝົດ: <strong className="text-slate-800 font-bold">{filteredUsers.length}</strong> ບັນຊີ
+                "àºªàº°à»àº”àº‡àº—àº±àº‡à»àº»àº”": <strong className="text-slate-800 font-bold">{filteredUsers.length}</strong> àºšàº±àº™àºŠàºµ
               </div>
             </div>
           </div>
@@ -858,13 +868,13 @@ export default function AccountsView({
             <table className="w-full text-left text-xs text-slate-700">
               <thead>
                 <tr className="bg-slate-100 text-[11px] font-bold text-slate-600 border-b border-slate-250 uppercase tracking-wider">
-                  <th className="p-4 text-center w-12">ລຳດັບ</th>
-                  <th className="p-4">ຊື່ຜູ້ໃຊ້ບັນຊີ (Username)</th>
-                  <th className="p-4">ລະຫັດຜ່ານ (Password)</th>
-                  <th className="p-4">ບົດບາດ (Role)</th>
-                  <th className="p-4">ສາຂາສັງກັດ (Branch)</th>
-                  <th className="p-4">ຟັງຊັນທີ່ໄດ້ສິດເຂົ້າເຖິງ (Visible Tabs)</th>
-                  <th className="p-4 text-center w-28">ຈັດການ</th>
+                  <th className="p-4 text-center w-12">àº¥àº³àº”àº±àºš</th>
+                  <th className="p-4">àºŠàº·à»ˆàºœàº¹à»‰à»ƒàºŠà»‰àºšàº±àº™àºŠàºµ (Username)</th>
+                  <th className="p-4">àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™ (Password)</th>
+                  <th className="p-4">àºšàº»àº”àºšàº²àº” (Role)</th>
+                  <th className="p-4">àºªàº²àº‚àº²àºªàº±àº‡àºàº±àº” (Branch)</th>
+                  <th className="p-4">àºŸàº±àº‡àºŠàº±àº™àº—àºµà»ˆà»„àº”à»‰àºªàº´àº”à»€àº‚àº»à»‰àº²à»€àº–àº´àº‡ (Visible Tabs)</th>
+                  <th className="p-4 text-center w-28">àºˆàº±àº”àºàº²àº™</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -872,6 +882,7 @@ export default function AccountsView({
                   const userIndexInMain = users.findIndex(u => u.username === user.username);
                   const isSelf = user.username === currentUser.username;
                   const canSeePassword = Boolean(visiblePasswordUsers[user.username]);
+                  const passwordToggleLabel = canSeePassword ? 'ປິດ' : 'ເບິ່ງ';
                   const permissionsList = user.allowedTabs || (user.status === 'Admin' 
                     ? ['dashboard', 'pm', 'inspections', 'incidents', 'approvals', 'tracking', 'repairs', 'accounts']
                     : ['dashboard', 'pm', 'inspections', 'incidents', 'approvals', 'tracking', 'repairs']);
@@ -901,7 +912,7 @@ export default function AccountsView({
                               {user.username}
                               {isSelf && (
                                 <span className="text-[8.5px] bg-amber-200 text-amber-950 px-1.5 py-0.2 rounded-md font-bold uppercase tracking-wider">
-                                  ບັນຊີທ່ານ
+                                  àºšàº±àº™àºŠàºµàº—à»ˆàº²àº™
                                 </span>
                               )}
                             </span>
@@ -915,7 +926,7 @@ export default function AccountsView({
                               ? 'bg-amber-100 border-amber-300 text-amber-950'
                               : 'bg-slate-950 border-cyan-900/70 text-slate-100'
                           }`}>
-                            {canSeePassword ? getVisiblePasswordValue(user) : '••••••••'}
+                            {canSeePassword ? getVisiblePasswordValue(user) : 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢'}
                           </span>
                           <button
                             type="button"
@@ -926,10 +937,10 @@ export default function AccountsView({
                                 : 'border-cyan-500/40 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/20'
                             }`}
                             aria-label={canSeePassword ? `Hide password for ${user.username}` : `Show password for ${user.username}`}
-                            title={canSeePassword ? 'ເຊື່ອງລະຫັດຜ່ານ' : 'ສະແດງລະຫັດຜ່ານ'}
+                            title={canSeePassword ? 'à»€àºŠàº·à»ˆàº­àº‡àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™' : 'àºªàº°à»àº”àº‡àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™'}
                           >
                             {canSeePassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                            <span>{canSeePassword ? 'ປິດ' : 'ເບິ່ງ'}</span>
+                            <span>{passwordToggleLabel}</span>
                           </button>
                         </div>
                       </td>
@@ -940,11 +951,11 @@ export default function AccountsView({
                             : 'bg-indigo-100 text-indigo-750 border border-indigo-200'
                         }`}>
                           <Shield className="h-3 w-3 shrink-0" />
-                          {user.status === 'Admin' ? 'Admin (ຜູ້ດູແລ)' : 'Branch User'}
+                          {user.status === 'Admin' ? 'Admin (àºœàº¹à»‰àº”àº¹à»àº¥)' : 'Branch User'}
                         </span>
                       </td>
                       <td className="p-4 font-semibold text-slate-700">
-                        🏢 {user.branch}
+                        ðŸ¢ {user.branch}
                       </td>
                       <td className="p-4">
                         <div className="flex flex-wrap gap-1 max-w-sm">
@@ -960,13 +971,13 @@ export default function AccountsView({
                                     : 'bg-emerald-50 text-emerald-800 border-emerald-100'
                                 }`}
                               >
-                                ✅ {cleanLabel}
+                                âœ… {cleanLabel}
                               </span>
                             );
                           })}
                           {permissionsList.length === 0 && (
                             <span className="text-red-500 font-bold text-[9.5px]">
-                              ⚠️ ບໍ່ມີສິດເຂົ້າເຖິງໃດໆ
+                              âš ï¸ àºšà»à»ˆàº¡àºµàºªàº´àº”à»€àº‚àº»à»‰àº²à»€àº–àº´àº‡à»ƒàº”à»†
                             </span>
                           )}
                         </div>
@@ -976,18 +987,18 @@ export default function AccountsView({
                           <button
                             onClick={() => setViewingUser(user)}
                             className="p-1 px-2 border border-slate-200 hover:border-cyan-300 hover:bg-cyan-50 text-slate-650 hover:text-cyan-800 font-bold rounded-lg cursor-pointer transition flex items-center gap-1"
-                            title="ເບິ່ງລາຍລະອຽດ User"
+                            title="à»€àºšàº´à»ˆàº‡àº¥àº²àºàº¥àº°àº­àº½àº” User"
                           >
                             <UserCircle className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">ເບິ່ງ</span>
+                            <span className="text-[10px]">à»€àºšàº´à»ˆàº‡</span>
                           </button>
                           <button
                             onClick={() => handleOpenEdit(user, userIndexInMain)}
                             className="p-1 px-2 border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-slate-650 hover:text-emerald-800 font-bold rounded-lg cursor-pointer transition flex items-center gap-1"
-                            title="ແກ້ໄຂສິດຜູ້ໃຊ້"
+                            title="à»àºà»‰à»„àº‚àºªàº´àº”àºœàº¹à»‰à»ƒàºŠà»‰"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">ແກ້ໄຂ</span>
+                            <span className="text-[10px]">à»àºà»‰à»„àº‚</span>
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user)}
@@ -997,10 +1008,10 @@ export default function AccountsView({
                                 ? 'border-slate-100 text-slate-300 cursor-not-allowed bg-slate-50' 
                                 : 'border-slate-200 text-slate-550 hover:text-rose-700 hover:bg-rose-50 hover:border-rose-200 cursor-pointer'
                             }`}
-                            title={isSelf ? "ທ່ານບໍ່ສາມາດລົບຕົວເອງໄດ້" : "ລົບຜູ້ໃຊ້"}
+                            title={isSelf ? "àº—à»ˆàº²àº™àºšà»à»ˆàºªàº²àº¡àº²àº”àº¥àº»àºšàº•àº»àº§à»€àº­àº‡à»„àº”à»‰" : "àº¥àº»àºšàºœàº¹à»‰à»ƒàºŠà»‰"}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">ລົບ</span>
+                            <span className="text-[10px]">àº¥àº»àºš</span>
                           </button>
                         </div>
                       </td>
@@ -1012,7 +1023,7 @@ export default function AccountsView({
                   <tr>
                     <td colSpan={7} className="text-center py-10 text-slate-400">
                       <ShieldAlert className="h-8 w-8 mx-auto text-slate-300 mb-2 animate-bounce" />
-                      ບໍ່ພົບຂໍ້ມູນບັນຊີຜູ້ໃຊ້ທີ່ຄົ້ນຫາ!
+                      àºšà»à»ˆàºžàº»àºšàº‚à»à»‰àº¡àº¹àº™àºšàº±àº™àºŠàºµàºœàº¹à»‰à»ƒàºŠà»‰àº—àºµà»ˆàº„àº»à»‰àº™àº«àº²!
                     </td>
                   </tr>
                 )}
@@ -1030,7 +1041,7 @@ export default function AccountsView({
           <div className="bg-white rounded-2xl p-6 border border-slate-150 shadow-sm">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">
               <PlusCircle className="h-4.5 w-4.5 text-emerald-850" />
-              ເພີ່ມຂໍ້ມູນ ສາຂາ ແລະ ຝ່າຍ/ໜ່ວຍບໍລິການໃໝ່ (Add New Branch & division)
+              à»€àºžàºµà»ˆàº¡àº‚à»à»‰àº¡àº¹àº™ àºªàº²àº‚àº² à»àº¥àº° àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™à»ƒà»à»ˆ (Add New Branch & division)
             </h3>
 
             {branchErrorText && (
@@ -1043,11 +1054,11 @@ export default function AccountsView({
             <form onSubmit={handleAddBranch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
               <div className="lg:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  1. ຊື່ສາຂາ (Branch Name) *
+                  1. àºŠàº·à»ˆàºªàº²àº‚àº² (Branch Name) *
                 </label>
                 <input
                   type="text"
-                  placeholder="ຕົວຢ່າງ: 00.ສໍານັກງານໃຫຍ່, 05.ສາຂາຈຳປາສັກ"
+                  placeholder="àº•àº»àº§àº¢à»ˆàº²àº‡: 00.àºªà»àº²àº™àº±àºàº‡àº²àº™à»ƒàº«àºà»ˆ, 05.àºªàº²àº‚àº²àºˆàº³àº›àº²àºªàº±àº"
                   value={newBranchInput}
                   onChange={(e) => setNewBranchInput(e.target.value)}
                   className="w-full border border-slate-300 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 font-medium"
@@ -1055,7 +1066,7 @@ export default function AccountsView({
                 {uniqueBranches.length > 0 && (
                   <div className="mt-2 bg-emerald-50/50 p-2 rounded-xl border border-emerald-100/70">
                     <span className="block text-[10px] font-bold text-emerald-850 mb-1">
-                      💡 ໃຊ້ສາຂາເກົ່າທີ່ມີໃນລະບົບ (Or use existing branch):
+                      ðŸ’¡ à»ƒàºŠà»‰àºªàº²àº‚àº²à»€àºàº»à»ˆàº²àº—àºµà»ˆàº¡àºµà»ƒàº™àº¥àº°àºšàº»àºš (Or use existing branch):
                     </span>
                     <select
                       onChange={(e) => {
@@ -1066,7 +1077,7 @@ export default function AccountsView({
                       value={uniqueBranches.includes(newBranchInput) ? newBranchInput : ""}
                       className="w-full border border-slate-200 rounded-lg p-1.5 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 font-medium cursor-pointer"
                     >
-                      <option value="">-- ເລືອກສາຂາເກົ່າ --</option>
+                      <option value="">-- à»€àº¥àº·àº­àºàºªàº²àº‚àº²à»€àºàº»à»ˆàº² --</option>
                       {uniqueBranches.map(br => (
                         <option key={br} value={br}>{br}</option>
                       ))}
@@ -1077,11 +1088,11 @@ export default function AccountsView({
 
               <div className="lg:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  2. ຝ່າຍ / ໜ່ວຍບໍລິການ (Division/Unit Name) *
+                  2. àºà»ˆàº²àº / à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™ (Division/Unit Name) *
                 </label>
                 <input
                   type="text"
-                  placeholder="ຕົວຢ່າງ: ຝ່າຍບໍລິຫານອາຄານ, ໜ່ວຍບໍລິການປາກເຊ, ..."
+                  placeholder="àº•àº»àº§àº¢à»ˆàº²àº‡: àºà»ˆàº²àºàºšà»àº¥àº´àº«àº²àº™àº­àº²àº„àº²àº™, à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™àº›àº²àºà»€àºŠ, ..."
                   value={newDivisionInput}
                   onChange={(e) => setNewDivisionInput(e.target.value)}
                   className="w-full border border-slate-300 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 font-medium"
@@ -1094,7 +1105,7 @@ export default function AccountsView({
                   className="w-full bg-emerald-800 hover:bg-emerald-950 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow cursor-pointer transition flex items-center justify-center gap-1.5"
                 >
                   <Save className="h-4 w-4" />
-                  ເພີ່ມຂໍ້ມູນ (Add row)
+                  à»€àºžàºµà»ˆàº¡àº‚à»à»‰àº¡àº¹àº™ (Add row)
                 </button>
               </div>
             </form>
@@ -1110,14 +1121,14 @@ export default function AccountsView({
                 </span>
                 <input
                   type="text"
-                  placeholder="ຄົ້ນຫາຊື່ສາຂາ, ຝ່າຍ..."
+                  placeholder="àº„àº»à»‰àº™àº«àº²àºŠàº·à»ˆàºªàº²àº‚àº², àºà»ˆàº²àº..."
                   value={branchSearchTerm}
                   onChange={(e) => setBranchSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
                 />
               </div>
               <div className="text-[11px] text-slate-500 font-mono shrink-0">
-                ລວມທັງໝົດ: <strong className="text-slate-800 font-bold">{filteredBranches.length}</strong> ລາຍການ
+                "àº¥àº§àº¡àº—àº±àº‡à»àº»àº”": <strong className="text-slate-800 font-bold">{filteredBranches.length}</strong> àº¥àº²àºàºàº²àº™
               </div>
             </div>
 
@@ -1126,10 +1137,10 @@ export default function AccountsView({
               <table className="w-full text-left text-xs text-slate-700">
                 <thead>
                   <tr className="bg-slate-100 text-[11px] font-bold text-slate-600 border-b border-slate-250 uppercase tracking-wider">
-                    <th className="p-4 text-center w-16">ລຳດັບ</th>
-                    <th className="p-4">ຊື່ສາຂາ (Branch Name)</th>
-                    <th className="p-4">ຝ່າຍ / ໜ່ວຍບໍລິການ (Division/Department)</th>
-                    <th className="p-4 text-center w-28">ຈັດການ</th>
+                    <th className="p-4 text-center w-16">àº¥àº³àº”àº±àºš</th>
+                    <th className="p-4">àºŠàº·à»ˆàºªàº²àº‚àº² (Branch Name)</th>
+                    <th className="p-4">àºà»ˆàº²àº / à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™ (Division/Department)</th>
+                    <th className="p-4 text-center w-28">àºˆàº±àº”àºàº²àº™</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1140,19 +1151,19 @@ export default function AccountsView({
                       </td>
                       <td className="p-4 font-bold text-slate-900 flex items-center gap-1.5">
                         <Building className="h-4 w-4 text-emerald-800 shrink-0" />
-                        {item.ສາຂາ}
+                        {item["àºªàº²àº‚àº²"]}
                       </td>
                       <td className="p-4 font-semibold text-slate-700">
-                        📁 {item["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || '-'}
+                        ðŸ“ {item["àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™"] || '-'}
                       </td>
                       <td className="p-4 text-center">
                         <button
                           onClick={() => handleDeleteBranch(item)}
                           className="p-1 px-3 border border-slate-200 text-slate-550 hover:text-rose-700 hover:bg-rose-50 hover:border-rose-250 rounded-lg cursor-pointer transition flex items-center justify-center gap-1 mx-auto"
-                          title="ລຶບລາຍການສາຂາ/ຝ່າຍ"
+                          title="àº¥àº¶àºšàº¥àº²àºàºàº²àº™àºªàº²àº‚àº²/àºà»ˆàº²àº"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                          <span className="text-[10px]">ລຶບ</span>
+                          <span className="text-[10px]">àº¥àº¶àºš</span>
                         </button>
                       </td>
                     </tr>
@@ -1162,7 +1173,7 @@ export default function AccountsView({
                     <tr>
                       <td colSpan={4} className="text-center py-12 text-slate-400">
                         <MapPin className="h-8 w-8 mx-auto text-slate-300 mb-2" />
-                        ບໍ່ພົບຂໍ້ມູນສາຂາ ຫຼື ຝ່າຍບໍລິການ ທີ່ຄົ້ນຫາ!
+                        àºšà»à»ˆàºžàº»àºšàº‚à»à»‰àº¡àº¹àº™àºªàº²àº‚àº² àº«àº¼àº· àºà»ˆàº²àºàºšà»àº¥àº´àºàº²àº™ àº—àºµà»ˆàº„àº»à»‰àº™àº«àº²!
                       </td>
                     </tr>
                   )}
@@ -1183,12 +1194,12 @@ export default function AccountsView({
               {editingChecklistItem ? (
                 <>
                   <Edit2 className="h-4.5 w-4.5 text-emerald-850 animate-pulse" />
-                  <span>ແກ້ໄຂລາຍການກວດກາ (Edit Checklist Item)</span>
+                  <span>à»àºà»‰à»„àº‚àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² (Edit Checklist Item)</span>
                 </>
               ) : (
                 <>
                   <PlusCircle className="h-4.5 w-4.5 text-emerald-850" />
-                  <span>ເພີ່ມລາຍການກວດກາ ແລະ ພື້ນທີ່/ຈຸດກວດ ໃໝ່ (Add New Checklist & Area/Point)</span>
+                  <span>à»€àºžàºµà»ˆàº¡àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² à»àº¥àº° àºžàº·à»‰àº™àº—àºµà»ˆ/àºˆàº¸àº”àºàº§àº” à»ƒà»à»ˆ (Add New Checklist & Area/Point)</span>
                 </>
               )}
             </h3>
@@ -1205,7 +1216,7 @@ export default function AccountsView({
                 {/* System Category Select/Input */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    1. ລະບົບທີ່ກວດ (System Category) *
+                    1. àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº” (System Category) *
                   </label>
                   {!isCustomSystem ? (
                     <select
@@ -1221,17 +1232,17 @@ export default function AccountsView({
                       }}
                       className="w-full border border-slate-300 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 cursor-pointer font-medium"
                     >
-                      <option value="">-- ເລືອກລະບົບທີ່ກວດ --</option>
-                      {Array.from(new Set(checklistItems.map(item => item.ລະບົບທີ່ກວດ))).sort().map((sys, idx) => (
+                      <option value="">-- à»€àº¥àº·àº­àºàº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº” --</option>
+                      {Array.from(new Set(checklistItems.map(item => item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"]))).sort().map((sys, idx) => (
                         <option key={idx} value={sys}>{sys}</option>
                       ))}
-                      <option value="__custom__" className="text-emerald-750 font-bold">+ ປ້ອນລະບົບໃໝ່ (Enter Custom System)</option>
+                      <option value="__custom__" className="text-emerald-750 font-bold">+ àº›à»‰àº­àº™àº¥àº°àºšàº»àºšà»ƒà»à»ˆ (Enter Custom System)</option>
                     </select>
                   ) : (
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="...ປ້ອນຊື່ລະບົບໃໝ່"
+                        placeholder="...àº›à»‰àº­àº™àºŠàº·à»ˆàº¥àº°àºšàº»àºšà»ƒà»à»ˆ"
                         value={newChecklistSystem}
                         onChange={(e) => setNewChecklistSystem(e.target.value)}
                         className="flex-1 border border-slate-300 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 font-medium"
@@ -1244,7 +1255,7 @@ export default function AccountsView({
                         }}
                         className="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-600 rounded-xl px-3 text-xs shrink-0 font-bold"
                       >
-                        ເລືອກຈາກລາຍການ
+                        à»€àº¥àº·àº­àºàºˆàº²àºàº¥àº²àºàºàº²àº™
                       </button>
                     </div>
                   )}
@@ -1253,7 +1264,7 @@ export default function AccountsView({
                 {/* Sub category Select/Input */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    2. ພື້ນທີ່/ຈຸດກວດ ( Area / Point) *
+                    2. àºžàº·à»‰àº™àº—àºµà»ˆ/àºˆàº¸àº”àºàº§àº” ( Area / Point) *
                   </label>
                   {!isCustomCategory ? (
                     <select
@@ -1269,23 +1280,23 @@ export default function AccountsView({
                       }}
                       className="w-full border border-slate-300 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 cursor-pointer font-medium"
                     >
-                      <option value="">-- ເລືອກ ພື້ນທີ່/ຈຸດກວດ --</option>
+                      <option value="">-- à»€àº¥àº·àº­àº àºžàº·à»‰àº™àº—àºµà»ˆ/àºˆàº¸àº”àºàº§àº” --</option>
                       {Array.from(
                         new Set(
                           checklistItems
-                            .filter(item => !newChecklistSystem || item.ລະບົບທີ່ກວດ === newChecklistSystem)
-                            .map(item => item.ໝວດລະບົບກວດ)
+                            .filter(item => !newChecklistSystem || item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"] === newChecklistSystem)
+                            .map(item => item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"])
                         )
                       ).sort().map((cat, idx) => (
                         <option key={idx} value={cat}>{cat}</option>
                       ))}
-                      <option value="__custom__" className="text-emerald-750 font-bold">+ ປ້ອນ ພື້ນທີ່/ຈຸດກວດ ໃໝ່ (Enter Custom Area/Point)</option>
+                      <option value="__custom__" className="text-emerald-750 font-bold">+ àº›à»‰àº­àº™ àºžàº·à»‰àº™àº—àºµà»ˆ/àºˆàº¸àº”àºàº§àº” à»ƒà»à»ˆ (Enter Custom Area/Point)</option>
                     </select>
                   ) : (
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="...ປ້ອນຊື່ ພື້ນທີ່/ຈຸດກວດ"
+                        placeholder="...àº›à»‰àº­àº™àºŠàº·à»ˆ àºžàº·à»‰àº™àº—àºµà»ˆ/àºˆàº¸àº”àºàº§àº”"
                         value={newChecklistCategory}
                         onChange={(e) => setNewChecklistCategory(e.target.value)}
                         className="flex-1 border border-slate-300 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 font-medium"
@@ -1298,7 +1309,7 @@ export default function AccountsView({
                         }}
                         className="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-600 rounded-xl px-3 text-xs shrink-0 font-bold"
                       >
-                        ເລືອກຈາກລາຍການ
+                        à»€àº¥àº·àº­àºàºˆàº²àºàº¥àº²àºàºàº²àº™
                       </button>
                     </div>
                   )}
@@ -1307,17 +1318,17 @@ export default function AccountsView({
                 {/* Form Type Selector */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    3. ປະເພດຟອມ (Form Type) *
+                    3. àº›àº°à»€àºžàº”àºŸàº­àº¡ (Form Type) *
                   </label>
                   <select
                     value={newChecklistFormType}
                     onChange={(e) => setNewChecklistFormType(e.target.value)}
                     className="w-full border border-slate-300 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 cursor-pointer font-medium"
                   >
-                    <option value="ສຳນັກງານໃຫຍ່">ຟອມ ສຳນັກງານໃຫຍ່ (HQ)</option>
-                    <option value="ສາຂາ">ຟອມ ສາຂາ (Branch)</option>
-                    <option value="ໜ່ວຍບໍລິການ">ຟອມ ໜ່ວຍບໍລິການ (Service Unit)</option>
-                    <option value="ຫ້ອງຮັບເງິນ">ຟອມ ຫ້ອງຮັບເງິນ (Cash Office)</option>
+                    <option value="àºªàº³àº™àº±àºàº‡àº²àº™à»ƒàº«àºà»ˆ">àºŸàº­àº¡ àºªàº³àº™àº±àºàº‡àº²àº™à»ƒàº«àºà»ˆ (HQ)</option>
+                    <option value="àºªàº²àº‚àº²">àºŸàº­àº¡ àºªàº²àº‚àº² (Branch)</option>
+                    <option value="à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™">àºŸàº­àº¡ à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™ (Service Unit)</option>
+                    <option value="àº«à»‰àº­àº‡àº®àº±àºšà»€àº‡àº´àº™">àºŸàº­àº¡ àº«à»‰àº­àº‡àº®àº±àºšà»€àº‡àº´àº™ (Cash Office)</option>
                   </select>
                 </div>
               </div>
@@ -1325,13 +1336,13 @@ export default function AccountsView({
               {/* Inspection Item Description */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  4. ລາຍການກວດກາ (Inspection Item Description) *
+                  4. àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² (Inspection Item Description) *
                 </label>
                 <div className="flex flex-col sm:flex-row gap-4 items-stretch">
                   <input
                     type="text"
                     required
-                    placeholder="ຕົວຢ່າງ: ກວດເຊັກການເຮັດວຽກຂອງກ້ອງປົກກະຕິ, ກວດກາຄວາມສະອາດຂອງພື້ນ..."
+                    placeholder="àº•àº»àº§àº¢à»ˆàº²àº‡: àºàº§àº”à»€àºŠàº±àºàºàº²àº™à»€àº®àº±àº”àº§àº½àºàº‚àº­àº‡àºà»‰àº­àº‡àº›àº»àºàºàº°àº•àº´, àºàº§àº”àºàº²àº„àº§àº²àº¡àºªàº°àº­àº²àº”àº‚àº­àº‡àºžàº·à»‰àº™..."
                     value={newChecklistInspection}
                     onChange={(e) => setNewChecklistInspection(e.target.value)}
                     className="flex-1 border border-slate-300 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 font-medium"
@@ -1343,7 +1354,7 @@ export default function AccountsView({
                         className="bg-emerald-800 hover:bg-emerald-950 text-white text-xs font-bold py-2.5 px-6 rounded-xl shadow cursor-pointer transition flex items-center justify-center gap-1.5"
                       >
                         <Save className="h-4 w-4" />
-                        ບັນທຶກການແກ້ໄຂ (Save Changes)
+                        àºšàº±àº™àº—àº¶àºàºàº²àº™à»àºà»‰à»„àº‚ (Save Changes)
                       </button>
                       <button
                         type="button"
@@ -1351,7 +1362,7 @@ export default function AccountsView({
                         className="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-600 text-xs font-bold py-2.5 px-5 rounded-xl cursor-pointer transition flex items-center justify-center gap-1"
                       >
                         <X className="h-4 w-4" />
-                        ຍົກເລີກ (Cancel)
+                        àºàº»àºà»€àº¥àºµàº (Cancel)
                       </button>
                     </div>
                   ) : (
@@ -1360,7 +1371,7 @@ export default function AccountsView({
                       className="bg-emerald-800 hover:bg-emerald-950 text-white text-xs font-bold py-2.5 px-6 rounded-xl shadow cursor-pointer transition flex items-center justify-center gap-1.5 shrink-0"
                     >
                       <Save className="h-4 w-4" />
-                      ເພີ່ມຂໍ້ມູນລາຍການກວດ (Add item)
+                      à»€àºžàºµà»ˆàº¡àº‚à»à»‰àº¡àº¹àº™àº¥àº²àºàºàº²àº™àºàº§àº” (Add item)
                     </button>
                   )}
                 </div>
@@ -1379,7 +1390,7 @@ export default function AccountsView({
                   </span>
                   <input
                     type="text"
-                    placeholder="ຄົ້ນຫາ ລະບົບ, ພື້ນທີ່/ຈຸດກວດ ຫຼື ລາຍການ...."
+                    placeholder="àº„àº»à»‰àº™àº«àº² àº¥àº°àºšàº»àºš, àºžàº·à»‰àº™àº—àºµà»ˆ/àºˆàº¸àº”àºàº§àº” àº«àº¼àº· àº¥àº²àºàºàº²àº™...."
                     value={checklistSearchTerm}
                     onChange={(e) => setChecklistSearchTerm(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
@@ -1392,17 +1403,17 @@ export default function AccountsView({
                   onChange={(e) => setChecklistFormTypeFilter(e.target.value)}
                   className="border border-slate-300 rounded-xl p-2 px-3 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 cursor-pointer font-bold font-sans"
                 >
-                  <option value="ALL">ທຸກໆປະເພດຟອມ (All Forms)</option>
-                  <option value="ສຳນັກງານໃຫຍ່">🏢 ຟອມ ສຳນັກງານໃຫຍ່ (HQ)</option>
-                  <option value="ສາຂາ">🏛️ ຟອມ ສາຂາ (Branch)</option>
-                  <option value="ໜ່ວຍບໍລິການ">🏪 ຟອມ ໜ່ວຍບໍລິການ (Service Unit)</option>
-                  <option value="ຫ້ອງຮັບເງິນ">💰 ຟອມ ຫ້ອງຮັບເງິນ (Cash Office)</option>
+                  <option value="ALL">àº—àº¸àºà»†àº›àº°à»€àºžàº”àºŸàº­àº¡ (All Forms)</option>
+                  <option value="àºªàº³àº™àº±àºàº‡àº²àº™à»ƒàº«àºà»ˆ">ðŸ¢ àºŸàº­àº¡ àºªàº³àº™àº±àºàº‡àº²àº™à»ƒàº«àºà»ˆ (HQ)</option>
+                  <option value="àºªàº²àº‚àº²">ðŸ›ï¸ àºŸàº­àº¡ àºªàº²àº‚àº² (Branch)</option>
+                  <option value="à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™">ðŸª àºŸàº­àº¡ à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™ (Service Unit)</option>
+                  <option value="àº«à»‰àº­àº‡àº®àº±àºšà»€àº‡àº´àº™">ðŸ’° àºŸàº­àº¡ àº«à»‰àº­àº‡àº®àº±àºšà»€àº‡àº´àº™ (Cash Office)</option>
                 </select>
               </div>
 
               <div className="flex items-center gap-3 shrink-0 w-full lg:w-auto justify-between lg:justify-end">
                 <div className="text-[11px] text-slate-500 font-mono">
-                  ລວມທັງໝົດ: <strong className="text-slate-800 font-bold">{filteredChecklistItems.length}</strong> ລາຍການ
+                  "àº¥àº§àº¡àº—àº±àº‡à»àº»àº”": <strong className="text-slate-800 font-bold">{filteredChecklistItems.length}</strong> àº¥àº²àºàºàº²àº™
                 </div>
                 
                 <button
@@ -1411,7 +1422,7 @@ export default function AccountsView({
                   className="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-[11px] font-bold py-1.5 px-3 rounded-xl cursor-pointer transition flex items-center gap-1.5 shrink-0 shadow-xs"
                 >
                   <RotateCcw className="h-3.5 w-3.5 text-amber-700" />
-                  ຣີເຊັດຄ່າເລີ່ມຕົ້ນ (Reset)
+                  àº£àºµà»€àºŠàº±àº”àº„à»ˆàº²à»€àº¥àºµà»ˆàº¡àº•àº»à»‰àº™ (Reset)
                 </button>
               </div>
             </div>
@@ -1421,12 +1432,12 @@ export default function AccountsView({
               <table className="w-full text-left text-xs text-slate-700 border-collapse table-fixed">
                 <thead>
                   <tr className="bg-slate-100 text-[11px] font-bold text-slate-600 border-b border-slate-250 uppercase tracking-wider">
-                    <th className="p-4 text-center w-16">ລຳດັບ</th>
-                    <th className="p-4 w-1/5">ລະບົບທີ່ກວດ (System Category)</th>
-                    <th className="p-4 w-1/5">ພື້ນທີ່/ຈຸດກວດ ( Area / Point)</th>
-                    <th className="p-4 w-44 text-center">ປະເພດຟອມ (Form Type)</th>
-                    <th className="p-4 w-1/3">ລາຍການກວດກາ (Inspection Item)</th>
-                    <th className="p-4 text-center w-28">ຈັດການ</th>
+                    <th className="p-4 text-center w-16">àº¥àº³àº”àº±àºš</th>
+                    <th className="p-4 w-1/5">àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº” (System Category)</th>
+                    <th className="p-4 w-1/5">àºžàº·à»‰àº™àº—àºµà»ˆ/àºˆàº¸àº”àºàº§àº” ( Area / Point)</th>
+                    <th className="p-4 w-44 text-center">àº›àº°à»€àºžàº”àºŸàº­àº¡ (Form Type)</th>
+                    <th className="p-4 w-1/3">àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² (Inspection Item)</th>
+                    <th className="p-4 text-center w-28">àºˆàº±àº”àºàº²àº™</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1435,37 +1446,37 @@ export default function AccountsView({
                       <td className="p-4 text-center font-mono text-slate-400 font-bold">
                         {idx + 1}
                       </td>
-                      <td className="p-4 font-bold text-slate-900 truncate" title={item.ລະບົບທີ່ກວດ}>
-                        🛡️ {item.ລະບົບທີ່ກວດ}
+                      <td className="p-4 font-bold text-slate-900 truncate" title={item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"]}>
+                        ðŸ›¡ï¸ {item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"]}
                       </td>
-                      <td className="p-4 font-semibold text-slate-700 truncate" title={item.ໝວດລະບົບກວດ}>
-                        📦 {item.ໝວດລະບົບກວດ}
+                      <td className="p-4 font-semibold text-slate-700 truncate" title={item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"]}>
+                        ðŸ“¦ {item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"]}
                       </td>
                       <td className="p-4 text-center">
-                        {item.Form_Type === "ສຳນັກງານໃຫຍ່" ? (
+                        {item.Form_Type === "àºªàº³àº™àº±àºàº‡àº²àº™à»ƒàº«àºà»ˆ" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
-                            🏢 ສຳນັກງານໃຫຍ່
+                            ðŸ¢ àºªàº³àº™àº±àºàº‡àº²àº™à»ƒàº«àºà»ˆ
                           </span>
-                        ) : item.Form_Type === "ສາຂາ" ? (
+                        ) : item.Form_Type === "àºªàº²àº‚àº²" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            🏛️ ສາຂາ
+                            ðŸ›ï¸ àºªàº²àº‚àº²
                           </span>
-                        ) : item.Form_Type === "ໜ່ວຍບໍລິການ" ? (
+                        ) : item.Form_Type === "à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
-                            🏪 ໜ່ວຍບໍລິການ
+                            ðŸª à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™
                           </span>
-                        ) : item.Form_Type === "ຫ້ອງຮັບເງິນ" ? (
+                        ) : item.Form_Type === "àº«à»‰àº­àº‡àº®àº±àºšà»€àº‡àº´àº™" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                            💰 ຫ້ອງຮັບເງິນ
+                            ðŸ’° àº«à»‰àº­àº‡àº®àº±àºšà»€àº‡àº´àº™
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-650 border border-slate-200">
-                            🏛️ {item.Form_Type || "ສາຂາ"}
+                            ðŸ›ï¸ {item.Form_Type || "àºªàº²àº‚àº²"}
                           </span>
                         )}
                       </td>
                       <td className="p-4 text-slate-650 font-medium break-words">
-                        {item.ລາຍການກວດ}
+                        {item["àº¥àº²àºàºàº²àº™àºàº§àº”"]}
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
@@ -1477,19 +1488,19 @@ export default function AccountsView({
                                 ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
                                 : 'border-slate-200 text-slate-550 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-250'
                             }`}
-                            title="ແກ້ໄຂລາຍການກວດກາ"
+                            title="à»àºà»‰à»„àº‚àº¥àº²àºàºàº²àº™àºàº§àº”àºàº²"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">ແກ້ໄຂ</span>
+                            <span className="text-[10px]">à»àºà»‰à»„àº‚</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteChecklistItem(item)}
                             className="p-1 px-2.5 border border-slate-200 text-slate-550 hover:text-rose-700 hover:bg-rose-50 hover:border-rose-250 rounded-lg cursor-pointer transition flex items-center justify-center gap-1"
-                            title="ລຶບລາຍການກວດກາ"
+                            title="àº¥àº¶àºšàº¥àº²àºàºàº²àº™àºàº§àº”àºàº²"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">ລຶບ</span>
+                            <span className="text-[10px]">àº¥àº¶àºš</span>
                           </button>
                         </div>
                       </td>
@@ -1500,7 +1511,7 @@ export default function AccountsView({
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-slate-400">
                         <CheckSquare className="h-8 w-8 mx-auto text-slate-300 mb-2" />
-                        ບໍ່ພົບຂໍ້ມູນລາຍການກວດກາ ທີ່ຄົ້ນຫາ!
+                        àºšà»à»ˆàºžàº»àºšàº‚à»à»‰àº¡àº¹àº™àº¥àº²àºàºàº²àº™àºàº§àº”àºàº² àº—àºµà»ˆàº„àº»à»‰àº™àº«àº²!
                       </td>
                     </tr>
                   )}
@@ -1519,7 +1530,7 @@ export default function AccountsView({
           <div className="bg-white rounded-2xl p-6 border border-slate-150 shadow-sm">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-4 font-sans">
               <PlusCircle className="h-4.5 w-4.5 text-emerald-850" />
-              ເພີ່ມຂໍ້ມູນຂະແໜງໃໝ່ (Add New Sector)
+              à»€àºžàºµà»ˆàº¡àº‚à»à»‰àº¡àº¹àº™àº‚àº°à»à»œàº‡à»ƒà»à»ˆ (Add New Sector)
             </h3>
 
             {sectorErrorText && (
@@ -1532,11 +1543,11 @@ export default function AccountsView({
             <form onSubmit={handleAddSector} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
               <div className="lg:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 font-sans">
-                  ຊື່ຂະແໜງ (Sector Name) *
+                  àºŠàº·à»ˆàº‚àº°à»à»œàº‡ (Sector Name) *
                 </label>
                 <input
                   type="text"
-                  placeholder="ຕົວຢ່າງ: ຂະແໜງກວດກາໄອທີ, ຂະແໜງບໍລິຫານ..."
+                  placeholder="àº•àº»àº§àº¢à»ˆàº²àº‡: àº‚àº°à»à»œàº‡àºàº§àº”àºàº²à»„àº­àº—àºµ, àº‚àº°à»à»œàº‡àºšà»àº¥àº´àº«àº²àº™..."
                   value={newSectorInput}
                   onChange={(e) => setNewSectorInput(e.target.value)}
                   className="w-full border border-slate-350 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-medium font-sans"
@@ -1549,7 +1560,7 @@ export default function AccountsView({
                   className="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs py-2.8 px-4 rounded-xl shadow-md hover:shadow-lg cursor-pointer transition flex items-center justify-center gap-1.5 h-[38px] leading-none font-sans"
                 >
                   <PlusCircle className="h-4 w-4" />
-                  ເພີ່ມຂໍ້ມູນຂະແໜງ (Add Sector)
+                  à»€àºžàºµà»ˆàº¡àº‚à»à»‰àº¡àº¹àº™àº‚àº°à»à»œàº‡ (Add Sector)
                 </button>
               </div>
             </form>
@@ -1564,14 +1575,14 @@ export default function AccountsView({
                 </span>
                 <input
                   type="text"
-                  placeholder="ຄົ້ນຫາ ຂະແໜງ (Search Sectors)..."
+                  placeholder="àº„àº»à»‰àº™àº«àº² àº‚àº°à»à»œàº‡ (Search Sectors)..."
                   value={sectorSearchTerm}
                   onChange={(e) => setSectorSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 border border-slate-350 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white font-sans"
                 />
               </div>
               <div className="text-[11px] text-slate-500 font-medium font-mono">
-                ລວມທັງໝົດ: <strong className="text-slate-800 font-bold">{sectors.filter(s => s.ຂະແໜງ !== "none" && s.ຂະແໜງ.toLowerCase().includes(sectorSearchTerm.toLowerCase())).length}</strong> ລາຍການ
+                "àº¥àº§àº¡àº—àº±àº‡à»àº»àº”": <strong className="text-slate-800 font-bold">{sectors.filter(s => s["àº‚àº°à»à»œàº‡"] !== "none" && s["àº‚àº°à»à»œàº‡"].toLowerCase().includes(sectorSearchTerm.toLowerCase())).length}</strong> àº¥àº²àºàºàº²àº™
               </div>
             </div>
 
@@ -1579,37 +1590,37 @@ export default function AccountsView({
               <table className="w-full text-left text-xs text-slate-755 font-sans">
                 <thead>
                   <tr className="bg-slate-50 text-[11px] font-bold text-slate-600 border-b border-slate-150 uppercase tracking-wider">
-                    <th className="p-4 text-center w-16">ລຳດັບ</th>
-                    <th className="p-4">ຂະແໜງ (Sector Name)</th>
-                    <th className="p-4 text-center w-28">ຈັດການ</th>
+                    <th className="p-4 text-center w-16">àº¥àº³àº”àº±àºš</th>
+                    <th className="p-4">àº‚àº°à»à»œàº‡ (Sector Name)</th>
+                    <th className="p-4 text-center w-28">àºˆàº±àº”àºàº²àº™</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
                   {sectors
-                    .filter(s => s.ຂະແໜງ !== "none" && s.ຂະແໜງ.toLowerCase().includes(sectorSearchTerm.toLowerCase()))
+                    .filter(s => s["àº‚àº°à»à»œàº‡"] !== "none" && s["àº‚àº°à»à»œàº‡"].toLowerCase().includes(sectorSearchTerm.toLowerCase()))
                     .map((item, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/50 transition">
                         <td className="p-4 text-center font-mono text-slate-400">{idx + 1}</td>
-                        <td className="p-4 text-slate-800 font-medium">✨ {item.ຂະແໜງ}</td>
+                        <td className="p-4 text-slate-800 font-medium">âœ¨ {item["àº‚àº°à»à»œàº‡"]}</td>
                         <td className="p-4 text-center">
                           <button
                             type="button"
                             onClick={() => handleDeleteSector(item)}
                             className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1 mx-auto border border-transparent hover:border-rose-100 cursor-pointer"
-                            title="ລຶບຂະແໜງ"
+                            title="àº¥àº¶àºšàº‚àº°à»à»œàº‡"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                            ລຶບ
+                            àº¥àº¶àºš
                           </button>
                         </td>
                       </tr>
                     ))}
 
-                  {sectors.filter(s => s.ຂະແໜງ !== "none" && s.ຂະແໜງ.toLowerCase().includes(sectorSearchTerm.toLowerCase())).length === 0 && (
+                  {sectors.filter(s => s["àº‚àº°à»à»œàº‡"] !== "none" && s["àº‚àº°à»à»œàº‡"].toLowerCase().includes(sectorSearchTerm.toLowerCase())).length === 0 && (
                     <tr>
                       <td colSpan={3} className="text-center py-12 text-slate-400">
                         <MapPin className="h-8 w-8 mx-auto text-slate-300 mb-2" />
-                        ບໍ່ພົບຂໍ້ມູນຂະແໜງທີ່ຄົ້ນຫາ!
+                        àºšà»à»ˆàºžàº»àºšàº‚à»à»‰àº¡àº¹àº™àº‚àº°à»à»œàº‡àº—àºµà»ˆàº„àº»à»‰àº™àº«àº²!
                       </td>
                     </tr>
                   )}
@@ -1627,7 +1638,7 @@ export default function AccountsView({
           <div className="bg-white rounded-2xl p-6 border border-slate-150 shadow-sm">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-4 font-sans">
               <PlusCircle className="h-4.5 w-4.5 text-emerald-850" />
-              {editingPresetId ? 'ແກ້ໄຂແຜນຜັງ Mapping (Edit Mapping)' : 'ເພີ່ມແຜນຜັງ Mapping ໃໝ່ (Add New Mapping)'}
+              {editingPresetId ? 'à»àºà»‰à»„àº‚à»àºœàº™àºœàº±àº‡ Mapping (Edit Mapping)' : 'à»€àºžàºµà»ˆàº¡à»àºœàº™àºœàº±àº‡ Mapping à»ƒà»à»ˆ (Add New Mapping)'}
             </h3>
 
             {presetError && (
@@ -1642,12 +1653,12 @@ export default function AccountsView({
                 {/* Spare Part/Service */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 font-sans">
-                    ອະໄຫຼ່/ຄ່າບໍລິການ (Spare Part / Service) *
+                    àº­àº°à»„àº«àº¼à»ˆ/àº„à»ˆàº²àºšà»àº¥àº´àºàº²àº™ (Spare Part / Service) *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="ຕົວຢ່າງ: ດອກໄຟ LED 18W, ບໍລິການລ້າງແອ..."
+                    placeholder="àº•àº»àº§àº¢à»ˆàº²àº‡: àº”àº­àºà»„àºŸ LED 18W, àºšà»àº¥àº´àºàº²àº™àº¥à»‰àº²àº‡à»àº­..."
                     value={presetSparePart}
                     onChange={(e) => setPresetSparePart(e.target.value)}
                     className="w-full border border-slate-350 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-sans"
@@ -1657,7 +1668,7 @@ export default function AccountsView({
                 {/* Subcategory */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 font-sans">
-                    ໝວດຍ່ອຍລາຍການສ້ອມ (Subcategory) *
+                    à»àº§àº”àºà»ˆàº­àºàº¥àº²àºàºàº²àº™àºªà»‰àº­àº¡ (Subcategory) *
                   </label>
                   {!isCustomSubCategory ? (
                     <select
@@ -1676,14 +1687,14 @@ export default function AccountsView({
                       {uniqueSubCategories.map((cat) => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
-                      <option value="__custom__" className="text-emerald-700 font-bold">+ ປ້ອນໝວດຍ່ອຍໃໝ່ (Custom Subcategory)...</option>
+                      <option value="__custom__" className="text-emerald-700 font-bold">+ àº›à»‰àº­àº™à»àº§àº”àºà»ˆàº­àºà»ƒà»à»ˆ (Custom Subcategory)...</option>
                     </select>
                   ) : (
                     <div className="flex gap-2">
                       <input
                         type="text"
                         required
-                        placeholder="...ປ້ອນຊື່ໝວດຍ່ອຍໃໝ່"
+                        placeholder="...àº›à»‰àº­àº™àºŠàº·à»ˆà»àº§àº”àºà»ˆàº­àºà»ƒà»à»ˆ"
                         value={presetSubCategory}
                         onChange={(e) => setPresetSubCategory(e.target.value)}
                         className="flex-1 border border-slate-350 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-sans"
@@ -1692,11 +1703,11 @@ export default function AccountsView({
                         type="button"
                         onClick={() => {
                           setIsCustomSubCategory(false);
-                          setPresetSubCategory('ລະບົບໄຟຟ້າ');
+                          setPresetSubCategory('àº¥àº°àºšàº»àºšà»„àºŸàºŸà»‰àº²');
                         }}
                         className="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-xl px-3 text-xs shrink-0 font-bold font-sans transition-colors"
                       >
-                        ເລືອກຈາກລາຍການ
+                        à»€àº¥àº·àº­àºàºˆàº²àºàº¥àº²àºàºàº²àº™
                       </button>
                     </div>
                   )}
@@ -1705,12 +1716,12 @@ export default function AccountsView({
                 {/* Repair Sub Item */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 font-sans">
-                    ລາຍການສ້ອມຍ່ອຍ (Repair Sub-item) *
+                    àº¥àº²àºàºàº²àº™àºªà»‰àº­àº¡àºà»ˆàº­àº (Repair Sub-item) *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="ຕົວຢ່າງ: ຫຼອດໄຟເສຍ, ແອເຢັນບໍ່ພໍ..."
+                    placeholder="àº•àº»àº§àº¢à»ˆàº²àº‡: àº«àº¼àº­àº”à»„àºŸà»€àºªàº, à»àº­à»€àº¢àº±àº™àºšà»à»ˆàºžà»..."
                     value={presetSubItem}
                     onChange={(e) => setPresetSubItem(e.target.value)}
                     className="w-full border border-slate-350 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-sans"
@@ -1720,12 +1731,12 @@ export default function AccountsView({
                 {/* Unit */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 font-sans">
-                    ຫົວໜ່ວຍ (Unit) *
+                    àº«àº»àº§à»œà»ˆàº§àº (Unit) *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="ຕົວຢ່າງ: ອັນ, ເຄື່ອງ, ດອກ, ຄັ້ງ, ຖັງ..."
+                    placeholder="àº•àº»àº§àº¢à»ˆàº²àº‡: àº­àº±àº™, à»€àº„àº·à»ˆàº­àº‡, àº”àº­àº, àº„àº±à»‰àº‡, àº–àº±àº‡..."
                     value={presetUnit}
                     onChange={(e) => setPresetUnit(e.target.value)}
                     className="w-full border border-slate-350 rounded-xl p-2.5 text-xs bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-sans"
@@ -1742,14 +1753,14 @@ export default function AccountsView({
                       setEditingPresetId(null);
                       setPresetSparePart('');
                       setPresetSubItem('');
-                      setPresetUnit('ອັນ');
+                      setPresetUnit('àº­àº±àº™');
                       setPresetPrice(0);
                       setPresetError('');
                     }}
                     className="border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition flex items-center gap-1.5 h-[38px]"
                   >
                     <X className="h-4 w-4" />
-                    ຍົກເລີກ (Cancel)
+                    àºàº»àºà»€àº¥àºµàº (Cancel)
                   </button>
                 )}
                 <button
@@ -1757,7 +1768,7 @@ export default function AccountsView({
                   className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs py-2 px-6 rounded-xl shadow-md hover:shadow-lg cursor-pointer transition flex items-center gap-1.5 h-[38px]"
                 >
                   <Save className="h-4 w-4" />
-                  {editingPresetId ? 'ບັນທຶກການແກ້ໄຂ' : 'ເພີ່ມແຜນຜັງ Mapping'}
+                  {editingPresetId ? 'àºšàº±àº™àº—àº¶àºàºàº²àº™à»àºà»‰à»„àº‚' : 'à»€àºžàºµà»ˆàº¡à»àºœàº™àºœàº±àº‡ Mapping'}
                 </button>
               </div>
             </form>
@@ -1772,7 +1783,7 @@ export default function AccountsView({
                 </span>
                 <input
                   type="text"
-                  placeholder="ຄົ້ນຫາ ອະໄຫຼ່, ໝວດຍ່ອຍ, ລາຍການສ້ອມ..."
+                  placeholder="àº„àº»à»‰àº™àº«àº² àº­àº°à»„àº«àº¼à»ˆ, à»àº§àº”àºà»ˆàº­àº, àº¥àº²àºàºàº²àº™àºªà»‰àº­àº¡..."
                   value={presetsSearchTerm}
                   onChange={(e) => setPresetsSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 border border-slate-350 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white font-sans"
@@ -1786,16 +1797,16 @@ export default function AccountsView({
                   className="border border-slate-200 hover:bg-rose-50 text-rose-600 hover:text-rose-700 font-bold text-xs py-2 px-4 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm font-sans"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  ຣີເຊັດເປັນຄ່າເລີ່ມຕົ້ນ (Reset to Default)
+                  àº£àºµà»€àºŠàº±àº”à»€àº›àº±àº™àº„à»ˆàº²à»€àº¥àºµà»ˆàº¡àº•àº»à»‰àº™ (Reset to Default)
                 </button>
                 <div className="text-[11px] text-slate-500 font-medium font-mono">
-                  ລວມທັງໝົດ: <strong className="text-slate-800 font-bold">
+                  "àº¥àº§àº¡àº—àº±àº‡à»àº»àº”": <strong className="text-slate-800 font-bold">
                     {repairPresets.filter(p => 
                       p.sparePart.toLowerCase().includes(presetsSearchTerm.toLowerCase()) ||
                       p.repairSubCategory.toLowerCase().includes(presetsSearchTerm.toLowerCase()) ||
                       p.repairSubItem.toLowerCase().includes(presetsSearchTerm.toLowerCase())
                     ).length}
-                  </strong> ລາຍການ
+                  </strong> àº¥àº²àºàºàº²àº™
                 </div>
               </div>
             </div>
@@ -1804,12 +1815,12 @@ export default function AccountsView({
               <table className="w-full text-left text-xs text-slate-755 font-sans">
                 <thead>
                   <tr className="bg-slate-50 text-[11px] font-bold text-slate-600 border-b border-slate-150 uppercase tracking-wider">
-                    <th className="p-4 text-center w-12 font-sans">ລຳດັບ</th>
-                    <th className="p-4 font-sans">ອະໄຫຼ່/ຄ່າບໍລິການ</th>
-                    <th className="p-4 font-sans">ໝວດຍ່ອຍ</th>
-                    <th className="p-4 font-sans">ລາຍການສ້ອມຍ່ອຍ</th>
-                    <th className="p-4 font-sans">ຫົວໜ່ວຍ</th>
-                    <th className="p-4 text-center w-36 font-sans">ຈັດການ</th>
+                    <th className="p-4 text-center w-12 font-sans">àº¥àº³àº”àº±àºš</th>
+                    <th className="p-4 font-sans">àº­àº°à»„àº«àº¼à»ˆ/àº„à»ˆàº²àºšà»àº¥àº´àºàº²àº™</th>
+                    <th className="p-4 font-sans">à»àº§àº”àºà»ˆàº­àº</th>
+                    <th className="p-4 font-sans">àº¥àº²àºàºàº²àº™àºªà»‰àº­àº¡àºà»ˆàº­àº</th>
+                    <th className="p-4 font-sans">àº«àº»àº§à»œà»ˆàº§àº</th>
+                    <th className="p-4 text-center w-36 font-sans">àºˆàº±àº”àºàº²àº™</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
@@ -1836,19 +1847,19 @@ export default function AccountsView({
                               type="button"
                               onClick={() => handleEditPresetClick(item)}
                               className="text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-transparent hover:border-emerald-100 cursor-pointer"
-                              title="ແກ້ໄຂ Mapping"
+                              title="à»àºà»‰à»„àº‚ Mapping"
                             >
                               <Edit2 className="h-3.5 w-3.5" />
-                              ແກ້ໄຂ
+                              à»àºà»‰à»„àº‚
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeletePresetClick(item.id)}
                               className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-transparent hover:border-rose-100 cursor-pointer"
-                              title="ລຶບ Mapping"
+                              title="àº¥àº¶àºš Mapping"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
-                              ລຶບ
+                              àº¥àº¶àºš
                             </button>
                           </div>
                         </td>
@@ -1863,7 +1874,7 @@ export default function AccountsView({
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-slate-400">
                         <Wrench className="h-8 w-8 mx-auto text-slate-300 mb-2" />
-                        ບໍ່ພົບຂໍ້ມູນແຜນຜັງ Mapping ທີ່ຄົ້ນຫາ!
+                        àºšà»à»ˆàºžàº»àºšàº‚à»à»‰àº¡àº¹àº™à»àºœàº™àºœàº±àº‡ Mapping àº—àºµà»ˆàº„àº»à»‰àº™àº«àº²!
                       </td>
                     </tr>
                   )}
@@ -1884,7 +1895,7 @@ export default function AccountsView({
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-emerald-850" />
                 <h3 className="font-bold text-slate-900 text-sm">
-                  {editingIndex === null ? 'ເພີ່ມບັນຊີຜູ້ໃຊ້ໃໝ່' : `ແກ້ໄຂສິດ ແລະ ຂໍ້ມູນ "${username}"`}
+                  {editingIndex === null ? 'à»€àºžàºµà»ˆàº¡àºšàº±àº™àºŠàºµàºœàº¹à»‰à»ƒàºŠà»‰à»ƒà»à»ˆ' : `à»àºà»‰à»„àº‚àºªàº´àº” à»àº¥àº° àº‚à»à»‰àº¡àº¹àº™ "${username}"`}
                 </h3>
               </div>
               <button 
@@ -1899,7 +1910,7 @@ export default function AccountsView({
               {/* Error area */}
               {errorText && (
                 <div className="mx-6 mt-4 p-3 bg-rose-50 border-l-4 border-rose-500 text-rose-750 text-xs font-semibold rounded">
-                  ⚠️ {errorText}
+                  âš ï¸ {errorText}
                 </div>
               )}
 
@@ -1908,7 +1919,7 @@ export default function AccountsView({
                 {/* Username Input */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    ຊື່ຜູ້ໃຊ້ເຂົ້າລະບົບ (Username) *
+                    àºŠàº·à»ˆàºœàº¹à»‰à»ƒàºŠà»‰à»€àº‚àº»à»‰àº²àº¥àº°àºšàº»àºš (Username) *
                   </label>
                   <input
                     type="text"
@@ -1916,12 +1927,12 @@ export default function AccountsView({
                     value={username}
                     onChange={(e) => setUsername(e.target.value.replace(/\s+/g, ''))}
                     disabled={editingIndex !== null} // cannot change username once established for simplicity
-                    placeholder="ຕົວຢ່າງ: phone, ldb-staff-12"
+                    placeholder="àº•àº»àº§àº¢à»ˆàº²àº‡: phone, ldb-staff-12"
                     className="w-full border border-slate-300 rounded-xl p-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800 disabled:bg-slate-100 disabled:text-slate-400"
                   />
                   {editingIndex !== null && (
                     <span className="text-[10px] text-slate-400 mt-0.5 block">
-                      * ຊື່ຜູ້ໃຊ້ຢືນຢັນແລ້ວ ບໍ່ສາມາດປ່ຽນແປງໄດ້
+                      * àºŠàº·à»ˆàºœàº¹à»‰à»ƒàºŠà»‰àº¢àº·àº™àº¢àº±àº™à»àº¥à»‰àº§ àºšà»à»ˆàºªàº²àº¡àº²àº”àº›à»ˆàº½àº™à»àº›àº‡à»„àº”à»‰
                     </span>
                   )}
                 </div>
@@ -1929,7 +1940,7 @@ export default function AccountsView({
                 {/* Password Input */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    ລະຫັດຜ່ານ (Password) *
+                    àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™ (Password) *
                   </label>
                   <input
                     type="password"
@@ -1937,7 +1948,7 @@ export default function AccountsView({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password"
-                    placeholder="ປ້ອນລະຫັດຜ່ານບັນຊີ"
+                    placeholder="àº›à»‰àº­àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™àºšàº±àº™àºŠàºµ"
                     className="w-full border border-slate-300 rounded-xl p-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800"
                   />
                 </div>
@@ -1945,7 +1956,7 @@ export default function AccountsView({
                 {/* Optional User Image */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    ຮູບ User (Optional Avatar URL)
+                    àº®àº¹àºš User (Optional Avatar URL)
                   </label>
                   <div className="flex items-center gap-3">
                     <div className="h-11 w-11 rounded-full bg-slate-100 border border-slate-250 flex items-center justify-center overflow-hidden shrink-0">
@@ -1959,7 +1970,7 @@ export default function AccountsView({
                       type="url"
                       value={image}
                       onChange={(e) => setImage(e.target.value)}
-                      placeholder="https://... (ບໍ່ບັງຄັບ)"
+                      placeholder="https://... (àºšà»à»ˆàºšàº±àº‡àº„àº±àºš)"
                       className="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800"
                     />
                   </div>
@@ -1975,7 +1986,7 @@ export default function AccountsView({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      ບົດບາດ / ລະດັບສິດ (Status/Role) *
+                      àºšàº»àº”àºšàº²àº” / àº¥àº°àº”àº±àºšàºªàº´àº” (Status/Role) *
                     </label>
                     <select
                       value={status}
@@ -1989,14 +2000,14 @@ export default function AccountsView({
                       }}
                       className="w-full border border-slate-300 rounded-xl p-2.5 text-xs bg-white text-slate-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
-                      <option value="User">Branch User (ພະນັກງານສາຂາ)</option>
-                      <option value="Admin">Admin (ຜູ້ດູແລລະບົບທົ່ວໄປ)</option>
+                      <option value="User">Branch User (àºžàº°àº™àº±àºàº‡àº²àº™àºªàº²àº‚àº²)</option>
+                      <option value="Admin">Admin (àºœàº¹à»‰àº”àº¹à»àº¥àº¥àº°àºšàº»àºšàº—àº»à»ˆàº§à»„àº›)</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      ສາຂາສັງກັດ (Branch) *
+                      àºªàº²àº‚àº²àºªàº±àº‡àºàº±àº” (Branch) *
                     </label>
                     <select
                       value={branch}
@@ -2013,7 +2024,7 @@ export default function AccountsView({
                 {/* Checkbox Permission Modules List */}
                 <div className="pt-2 border-t border-slate-200">
                   <span className="block text-xs font-bold text-slate-700 mb-2">
-                    🔑 ກຳນົດສິດການເຂົ້າເຖິງ ໜ້າ/ຟັງຊັນ (Module Tab Visibility):
+                    ðŸ”‘ àºàº³àº™àº»àº”àºªàº´àº”àºàº²àº™à»€àº‚àº»à»‰àº²à»€àº–àº´àº‡ à»œà»‰àº²/àºŸàº±àº‡àºŠàº±àº™ (Module Tab Visibility):
                   </span>
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
                     {AVAILABLE_TABS.map(tab => {
@@ -2049,14 +2060,14 @@ export default function AccountsView({
                   onClick={() => setIsOpen(false)}
                   className="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow-xs"
                 >
-                  ຍົກເລີກ (Cancel)
+                  àºàº»àºà»€àº¥àºµàº (Cancel)
                 </button>
                 <button
                   type="submit"
                   className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow flex items-center gap-1.5"
                 >
                   <Save className="h-4 w-4" />
-                  ບັນທຶກ (Save Account)
+                  àºšàº±àº™àº—àº¶àº (Save Account)
                 </button>
               </div>
             </form>
@@ -2086,7 +2097,7 @@ export default function AccountsView({
                 <AlertCircle className="h-6 w-6 stroke-[2.5px]" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm">
-                ແຈ້ງເຕືອນລະບົບ (System Notification)
+                à»àºˆà»‰àº‡à»€àº•àº·àº­àº™àº¥àº°àºšàº»àºš (System Notification)
               </h3>
               <p className="text-xs text-slate-550 leading-relaxed">
                 {systemAlertMessage}
@@ -2098,7 +2109,7 @@ export default function AccountsView({
                 onClick={() => setSystemAlertMessage(null)}
                 className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2 px-6 rounded-xl cursor-pointer transition shadow-xs"
               >
-                ຕົກລົງ (OK)
+                àº•àº»àºàº¥àº»àº‡ (OK)
               </button>
             </div>
           </div>
@@ -2112,7 +2123,7 @@ export default function AccountsView({
             <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <UserCircle className="h-5 w-5 text-cyan-300" />
-                <h3 className="font-bold text-sm">ລາຍລະອຽດ User (User View)</h3>
+                <h3 className="font-bold text-sm">àº¥àº²àºàº¥àº°àº­àº½àº” User (User View)</h3>
               </div>
               <button
                 type="button"
@@ -2137,13 +2148,13 @@ export default function AccountsView({
                 )}
                 <div>
                   <p className="text-lg font-black text-slate-950">{viewingUser.username}</p>
-                  <p className="text-xs text-slate-500">{viewingUser.status === 'Admin' ? 'Admin' : 'Branch User'} · {viewingUser.branch || '-'}</p>
+                  <p className="text-xs text-slate-500">{viewingUser.status === 'Admin' ? 'Admin' : 'Branch User'} Â· {viewingUser.branch || '-'}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <p className="font-bold text-slate-500 mb-1">Password</p>
-                  <p className="font-mono text-slate-900">••••••••</p>
+                  <p className="font-mono text-slate-900">â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <p className="font-bold text-slate-500 mb-1">User Image</p>
@@ -2157,7 +2168,7 @@ export default function AccountsView({
                     const findTab = AVAILABLE_TABS.find(t => t.id === tabId);
                     return (
                       <span key={tabId} className="text-[10px] px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100 font-bold">
-                        ✅ {findTab ? findTab.label : tabId}
+                        âœ… {findTab ? findTab.label : tabId}
                       </span>
                     );
                   })}
@@ -2172,7 +2183,7 @@ export default function AccountsView({
                   onClick={() => setViewingUser(null)}
                   className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2 px-5 rounded-xl cursor-pointer transition shadow-xs"
                 >
-                  ປິດ (Close)
+                  àº›àº´àº” (Close)
                 </button>
               </div>
             </div>
@@ -2189,10 +2200,10 @@ export default function AccountsView({
                 <Trash2 className="h-6 w-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm">
-                ຢືນຢັນການລຶບຜູ້ໃຊ້?
+                àº¢àº·àº™àº¢àº±àº™àºàº²àº™àº¥àº¶àºšàºœàº¹à»‰à»ƒàºŠà»‰?
               </h3>
               <p className="text-xs text-slate-550 leading-relaxed">
-                ທ່ານຕ້ອງການລຶບບັນຊີຜູ້ໃຊ້ <strong className="text-slate-900 font-bold">"{deleteUserConfirm.username}"</strong> ແທ້ຫຼີບໍ່? ການດຳເນີນການນີ້ບໍ່ສາມາດຍົກເລີກໄດ້.
+                àº—à»ˆàº²àº™àº•à»‰àº­àº‡àºàº²àº™àº¥àº¶àºšàºšàº±àº™àºŠàºµàºœàº¹à»‰à»ƒàºŠà»‰ <strong className="text-slate-900 font-bold">"{deleteUserConfirm.username}"</strong> à»àº—à»‰àº«àº¼àºµàºšà»à»ˆ? àºàº²àº™àº”àº³à»€àº™àºµàº™àºàº²àº™àº™àºµà»‰àºšà»à»ˆàºªàº²àº¡àº²àº”àºàº»àºà»€àº¥àºµàºà»„àº”à»‰.
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
@@ -2201,14 +2212,14 @@ export default function AccountsView({
                 onClick={() => setDeleteUserConfirm(null)}
                 className="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow-xs"
               >
-                ຍົກເລີກ (Cancel)
+                àºàº»àºà»€àº¥àºµàº (Cancel)
               </button>
               <button
                 type="button"
                 onClick={executeDeleteUser}
                 className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow"
               >
-                ຍືນຢັນລຶບ (Confirm Delete)
+                àºàº·àº™àº¢àº±àº™àº¥àº¶àºš (Confirm Delete)
               </button>
             </div>
           </div>
@@ -2224,11 +2235,11 @@ export default function AccountsView({
                 <Building className="h-6 w-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm">
-                ຢືນຢັນການລຶບ ສາຂາ / ຝ່າຍ?
+                àº¢àº·àº™àº¢àº±àº™àºàº²àº™àº¥àº¶àºš àºªàº²àº‚àº² / àºà»ˆàº²àº?
               </h3>
               <p className="text-xs text-slate-550 leading-relaxed">
-                ທ່ານຕ້ອງການລຶບຂໍ້ມູນ ສາຂາ: <strong className="text-slate-900 font-bold">"{deleteBranchConfirm.ສາຂາ}"</strong> <br/>
-                ຝ່າຍ/ໜ່ວຍງານ: <strong className="text-slate-900 font-bold">"{deleteBranchConfirm["ຝ່າຍ/ໜ່ວຍບໍລິການ"]}"</strong> ຫຼີບໍ່?
+                àº—à»ˆàº²àº™àº•à»‰àº­àº‡àºàº²àº™àº¥àº¶àºšàº‚à»à»‰àº¡àº¹àº™ àºªàº²àº‚àº²: <strong className="text-slate-900 font-bold">"{deleteBranchConfirm["àºªàº²àº‚àº²"]}"</strong> <br/>
+                "àºà»ˆàº²àº/à»œà»ˆàº§àºàº‡àº²àº™": <strong className="text-slate-900 font-bold">"{deleteBranchConfirm["àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™"]}"</strong> àº«àº¼àºµàºšà»à»ˆ?
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
@@ -2237,14 +2248,14 @@ export default function AccountsView({
                 onClick={() => setDeleteBranchConfirm(null)}
                 className="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow-xs"
               >
-                ຍົກເລີກ (Cancel)
+                àºàº»àºà»€àº¥àºµàº (Cancel)
               </button>
               <button
                 type="button"
                 onClick={executeDeleteBranch}
                 className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow"
               >
-                ຍືນຢັນລຶບ (Confirm Delete)
+                àºàº·àº™àº¢àº±àº™àº¥àº¶àºš (Confirm Delete)
               </button>
             </div>
           </div>
@@ -2260,12 +2271,12 @@ export default function AccountsView({
                 <Trash2 className="h-6 w-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm">
-                ຢືນຢັນການລຶບລາຍການກວດກາ?
+                àº¢àº·àº™àº¢àº±àº™àºàº²àº™àº¥àº¶àºšàº¥àº²àºàºàº²àº™àºàº§àº”àºàº²?
               </h3>
               <p className="text-xs text-slate-550 leading-relaxed text-left">
-                • <strong>ລະບົບ:</strong> {deleteChecklistItemConfirm.ລະບົບທີ່ກວດ} <br/>
-                • <strong>ໝວດລະບົບບໍລິການ:</strong> {deleteChecklistItemConfirm.ໝວດລະບົບກວດ} <br/>
-                • <strong>ລາຍການກວດກາ:</strong> {deleteChecklistItemConfirm.ລາຍການກວດ}
+                â€¢ <strong>àº¥àº°àºšàº»àºš:</strong> {deleteChecklistItemConfirm["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"]} <br/>
+                â€¢ <strong>à»àº§àº”àº¥àº°àºšàº»àºšàºšà»àº¥àº´àºàº²àº™:</strong> {deleteChecklistItemConfirm["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"]} <br/>
+                â€¢ <strong>àº¥àº²àºàºàº²àº™àºàº§àº”àºàº²:</strong> {deleteChecklistItemConfirm["àº¥àº²àºàºàº²àº™àºàº§àº”"]}
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
@@ -2274,14 +2285,14 @@ export default function AccountsView({
                 onClick={() => setDeleteChecklistItemConfirm(null)}
                 className="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow-xs"
               >
-                ຍົກເລີກ (Cancel)
+                àºàº»àºà»€àº¥àºµàº (Cancel)
               </button>
               <button
                 type="button"
                 onClick={executeDeleteChecklistItem}
                 className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow"
               >
-                ຍືນຢັນລຶບ (Confirm Delete)
+                àºàº·àº™àº¢àº±àº™àº¥àº¶àºš (Confirm Delete)
               </button>
             </div>
           </div>
@@ -2297,10 +2308,10 @@ export default function AccountsView({
                 <MapPin className="h-6 w-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm">
-                ຢືນຢັນການລຶບຂະແໜງ?
+                àº¢àº·àº™àº¢àº±àº™àºàº²àº™àº¥àº¶àºšàº‚àº°à»à»œàº‡?
               </h3>
               <p className="text-xs text-slate-550 leading-relaxed text-center font-sans">
-                ທ່ານຕ້ອງການລຶບຂໍ້ມູນ ຂະແໜງ: <strong className="text-slate-900 font-bold">"{deleteSectorConfirm.ຂະແໜງ}"</strong> ແທ້ຫຼີບໍ່?
+                àº—à»ˆàº²àº™àº•à»‰àº­àº‡àºàº²àº™àº¥àº¶àºšàº‚à»à»‰àº¡àº¹àº™ àº‚àº°à»à»œàº‡: <strong className="text-slate-900 font-bold">"{deleteSectorConfirm["àº‚àº°à»à»œàº‡"]}"</strong> à»àº—à»‰àº«àº¼àºµàºšà»à»ˆ?
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2 font-sans">
@@ -2309,14 +2320,14 @@ export default function AccountsView({
                 onClick={() => setDeleteSectorConfirm(null)}
                 className="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow-xs"
               >
-                ຍົກເລີກ (Cancel)
+                àºàº»àºà»€àº¥àºµàº (Cancel)
               </button>
               <button
                 type="button"
                 onClick={executeDeleteSector}
                 className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow"
               >
-                ຍືນຢັນລຶບ (Confirm Delete)
+                àºàº·àº™àº¢àº±àº™àº¥àº¶àºš (Confirm Delete)
               </button>
             </div>
           </div>
@@ -2332,10 +2343,10 @@ export default function AccountsView({
                 <RotateCcw className="h-6 w-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm">
-                ຢືນຢັນການຣີເຊັດລາຍການກວດກາ?
+                àº¢àº·àº™àº¢àº±àº™àºàº²àº™àº£àºµà»€àºŠàº±àº”àº¥àº²àºàºàº²àº™àºàº§àº”àºàº²?
               </h3>
               <p className="text-xs text-slate-550 leading-relaxed text-center font-sans">
-                ທ່ານຕ້ອງການຣີເຊັດລາຍການກວດກາທັງໝົດກັບໄປເປັນຄ່າເລີ່ມຕົ້ນລະບົບຫຼີບໍ່? ຂໍ້ມູນທີ່ທ່ານເພີ່ມໃໝ່ທັງໝົດຈະຖືກລຶບອອກ.
+                àº—à»ˆàº²àº™àº•à»‰àº­àº‡àºàº²àº™àº£àºµà»€àºŠàº±àº”àº¥àº²àºàºàº²àº™àºàº§àº”àºàº²àº—àº±àº‡à»àº»àº”àºàº±àºšà»„àº›à»€àº›àº±àº™àº„à»ˆàº²à»€àº¥àºµà»ˆàº¡àº•àº»à»‰àº™àº¥àº°àºšàº»àºšàº«àº¼àºµàºšà»à»ˆ? àº‚à»à»‰àº¡àº¹àº™àº—àºµà»ˆàº—à»ˆàº²àº™à»€àºžàºµà»ˆàº¡à»ƒà»à»ˆàº—àº±àº‡à»àº»àº”àºˆàº°àº–àº·àºàº¥àº¶àºšàº­àº­àº.
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2 font-sans">
@@ -2344,14 +2355,14 @@ export default function AccountsView({
                 onClick={() => setShowResetConfirm(false)}
                 className="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow-xs"
               >
-                ຍົກເລີກ (Cancel)
+                àºàº»àºà»€àº¥àºµàº (Cancel)
               </button>
               <button
                 type="button"
                 onClick={executeResetChecklist}
                 className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition shadow"
               >
-                ຍືນຢັນຣີເຊັດ (Confirm Reset)
+                àºàº·àº™àº¢àº±àº™àº£àºµà»€àºŠàº±àº” (Confirm Reset)
               </button>
             </div>
           </div>
