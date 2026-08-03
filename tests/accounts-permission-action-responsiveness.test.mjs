@@ -39,4 +39,22 @@ assert.match(
   'Background user persistence must catch API errors instead of leaving UI stuck',
 );
 
+assert.match(
+  accountsSource,
+  /const safeAccountText = \(value: unknown\): string =>/,
+  'AccountsView must normalize optional user/master-data fields before filtering or rendering',
+);
+
+assert.doesNotMatch(
+  accountsSource,
+  /user\.(username|branch|status)\.toLowerCase\(\)/,
+  'AccountsView must not call toLowerCase directly on nullable user fields',
+);
+
+assert.doesNotMatch(
+  accountsSource,
+  /\.(sparePart|repairSubCategory|repairSubItem)\.toLowerCase\(\)|\]\.toLowerCase\(\)|\]\.trim\(\)\.toLowerCase\(\)/,
+  'AccountsView master-data filters must use safe text normalization for nullable imported records',
+);
+
 console.log('Accounts permission action responsiveness checks passed.');

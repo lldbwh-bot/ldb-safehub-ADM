@@ -125,11 +125,24 @@ export default function AccountsView({
     }
   };
 
+  const safeAccountText = (value: unknown): string => (
+    value === null || value === undefined ? '' : String(value)
+  );
+
+  const safeIncludes = (value: unknown, query: string): boolean => (
+    safeAccountText(value).toLocaleLowerCase('en-US').includes(query.toLocaleLowerCase('en-US'))
+  );
+
+  const safeEquals = (value: unknown, target: unknown): boolean => (
+    safeAccountText(value).trim().toLocaleLowerCase('en-US') ===
+    safeAccountText(target).trim().toLocaleLowerCase('en-US')
+  );
+
   // Search filter for Users
-  const filteredUsers = users.filter(user => 
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.branch.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.status.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(user =>
+    safeIncludes(user.username, searchTerm) ||
+    safeIncludes(user.branch, searchTerm) ||
+    safeIncludes(user.status, searchTerm)
   );
 
   const handleExportUsersExcel = () => {
@@ -200,20 +213,31 @@ export default function AccountsView({
   };
 
   // Search filter for Branches/Divisions
-  const filteredBranches = branches.filter(item => 
-    item["àºªàº²àº‚àº²"].toLowerCase().includes(branchSearchTerm.toLowerCase()) ||
-    (item["àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™"] || "").toLowerCase().includes(branchSearchTerm.toLowerCase())
+  const filteredBranches = branches.filter(item =>
+    safeIncludes(item["àºªàº²àº‚àº²"], branchSearchTerm) ||
+    safeIncludes(item["àºà»ˆàº²àº/à»œà»ˆàº§àºàºšà»àº¥àº´àºàº²àº™"], branchSearchTerm)
   );
 
   // Search filter for Checklist items
   const filteredChecklistItems = checklistItems.filter((item: any) => {
-    const matchesSearch = item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"].toLowerCase().includes(checklistSearchTerm.toLowerCase()) ||
-      item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"].toLowerCase().includes(checklistSearchTerm.toLowerCase()) ||
-      item["àº¥àº²àºàºàº²àº™àºàº§àº”"].toLowerCase().includes(checklistSearchTerm.toLowerCase());
+    const matchesSearch = safeIncludes(item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"], checklistSearchTerm) ||
+      safeIncludes(item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"], checklistSearchTerm) ||
+      safeIncludes(item["àº¥àº²àºàºàº²àº™àºàº§àº”"], checklistSearchTerm);
     const matchesFormType = checklistFormTypeFilter === 'ALL' || 
       (item.Form_Type && item.Form_Type.trim() === checklistFormTypeFilter.trim());
     return matchesSearch && matchesFormType;
   });
+
+  const filteredSectors = sectors.filter(s =>
+    safeAccountText(s["àº‚àº°à»à»œàº‡"]) !== "none" &&
+    safeIncludes(s["àº‚àº°à»à»œàº‡"], sectorSearchTerm)
+  );
+
+  const filteredRepairPresets = repairPresets.filter(p =>
+    safeIncludes(p.sparePart, presetsSearchTerm) ||
+    safeIncludes(p.repairSubCategory, presetsSearchTerm) ||
+    safeIncludes(p.repairSubItem, presetsSearchTerm)
+  );
   
   // Cleaned up dummy block
   //
@@ -320,7 +344,7 @@ export default function AccountsView({
     let updatedList = [...users];
 
     if (editingIndex === null) {
-      const exists = users.some(u => u.username.toLowerCase() === cleanedUsername.toLowerCase());
+      const exists = users.some(u => safeEquals(u.username, cleanedUsername));
       if (exists) {
         setErrorText(`àºŠàº·à»ˆàºœàº¹à»‰à»ƒàºŠà»‰ "${cleanedUsername}" àº¡àºµà»ƒàº™àº¥àº°àºšàº»àºšà»àº¥à»‰àº§! àºàº°àº¥àº¸àº™àº²àº›à»‰àº­àº™àºŠàº·à»ˆàº­àº·à»ˆàº™`);
         return;
@@ -329,7 +353,7 @@ export default function AccountsView({
     } else {
       const previousUser = users[editingIndex];
       const existsInOthers = users.some((u, idx) => 
-        idx !== editingIndex && u.username.toLowerCase() === cleanedUsername.toLowerCase()
+        idx !== editingIndex && safeEquals(u.username, cleanedUsername)
       );
       if (existsInOthers) {
         setErrorText(`àºŠàº·à»ˆàºœàº¹à»‰à»ƒàºŠà»‰ "${cleanedUsername}" àº¡àºµà»ƒàº™àº¥àº°àºšàº»àºšà»àº¥à»‰àº§!`);
@@ -427,7 +451,7 @@ export default function AccountsView({
 
     // Check duplicate
     const isDuplicate = sectors.some(
-      s => s["àº‚àº°à»à»œàº‡"].toLowerCase() === formattedSector.toLowerCase()
+      s => safeEquals(s["àº‚àº°à»à»œàº‡"], formattedSector)
     );
 
     if (isDuplicate) {
@@ -522,10 +546,10 @@ export default function AccountsView({
     const isDuplicate = checklistItems.some(
       item => 
         item !== editingChecklistItem &&
-        item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"].trim().toLowerCase() === sys.toLowerCase() &&
-        item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"].trim().toLowerCase() === cat.toLowerCase() &&
-        item["àº¥àº²àºàºàº²àº™àºàº§àº”"].trim().toLowerCase() === itemDetail.toLowerCase() &&
-        (item.Form_Type || 'àºªàº²àº‚àº²').trim().toLowerCase() === newChecklistFormType.trim().toLowerCase()
+        safeEquals(item["àº¥àº°àºšàº»àºšàº—àºµà»ˆàºàº§àº”"], sys) &&
+        safeEquals(item["à»àº§àº”àº¥àº°àºšàº»àºšàºàº§àº”"], cat) &&
+        safeEquals(item["àº¥àº²àºàºàº²àº™àºàº§àº”"], itemDetail) &&
+        safeEquals(item.Form_Type || 'àºªàº²àº‚àº²', newChecklistFormType)
     );
 
     if (isDuplicate) {
@@ -622,9 +646,9 @@ export default function AccountsView({
     
     const duplicate = repairPresets.find(p => 
       p.id !== editingPresetId &&
-      p.sparePart.trim().toLowerCase() === presetSparePart.trim().toLowerCase() &&
-      p.repairSubCategory === presetSubCategory &&
-      p.repairSubItem.trim().toLowerCase() === presetSubItem.trim().toLowerCase()
+      safeEquals(p.sparePart, presetSparePart) &&
+      safeEquals(p.repairSubCategory, presetSubCategory) &&
+      safeEquals(p.repairSubItem, presetSubItem)
     );
     
     if (duplicate) {
@@ -1582,7 +1606,7 @@ export default function AccountsView({
                 />
               </div>
               <div className="text-[11px] text-slate-500 font-medium font-mono">
-                "àº¥àº§àº¡àº—àº±àº‡à»àº»àº”": <strong className="text-slate-800 font-bold">{sectors.filter(s => s["àº‚àº°à»à»œàº‡"] !== "none" && s["àº‚àº°à»à»œàº‡"].toLowerCase().includes(sectorSearchTerm.toLowerCase())).length}</strong> àº¥àº²àºàºàº²àº™
+                "àº¥àº§àº¡àº—àº±àº‡à»àº»àº”": <strong className="text-slate-800 font-bold">{filteredSectors.length}</strong> àº¥àº²àºàºàº²àº™
               </div>
             </div>
 
@@ -1596,8 +1620,7 @@ export default function AccountsView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
-                  {sectors
-                    .filter(s => s["àº‚àº°à»à»œàº‡"] !== "none" && s["àº‚àº°à»à»œàº‡"].toLowerCase().includes(sectorSearchTerm.toLowerCase()))
+                  {filteredSectors
                     .map((item, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/50 transition">
                         <td className="p-4 text-center font-mono text-slate-400">{idx + 1}</td>
@@ -1616,7 +1639,7 @@ export default function AccountsView({
                       </tr>
                     ))}
 
-                  {sectors.filter(s => s["àº‚àº°à»à»œàº‡"] !== "none" && s["àº‚àº°à»à»œàº‡"].toLowerCase().includes(sectorSearchTerm.toLowerCase())).length === 0 && (
+                  {filteredSectors.length === 0 && (
                     <tr>
                       <td colSpan={3} className="text-center py-12 text-slate-400">
                         <MapPin className="h-8 w-8 mx-auto text-slate-300 mb-2" />
@@ -1801,11 +1824,7 @@ export default function AccountsView({
                 </button>
                 <div className="text-[11px] text-slate-500 font-medium font-mono">
                   "àº¥àº§àº¡àº—àº±àº‡à»àº»àº”": <strong className="text-slate-800 font-bold">
-                    {repairPresets.filter(p => 
-                      p.sparePart.toLowerCase().includes(presetsSearchTerm.toLowerCase()) ||
-                      p.repairSubCategory.toLowerCase().includes(presetsSearchTerm.toLowerCase()) ||
-                      p.repairSubItem.toLowerCase().includes(presetsSearchTerm.toLowerCase())
-                    ).length}
+                    {filteredRepairPresets.length}
                   </strong> àº¥àº²àºàºàº²àº™
                 </div>
               </div>
@@ -1824,12 +1843,7 @@ export default function AccountsView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
-                  {repairPresets
-                    .filter(p => 
-                      p.sparePart.toLowerCase().includes(presetsSearchTerm.toLowerCase()) ||
-                      p.repairSubCategory.toLowerCase().includes(presetsSearchTerm.toLowerCase()) ||
-                      p.repairSubItem.toLowerCase().includes(presetsSearchTerm.toLowerCase())
-                    )
+                  {filteredRepairPresets
                     .map((item, idx) => (
                       <tr key={item.id} className="hover:bg-slate-50/50 transition font-sans">
                         <td className="p-4 text-center font-mono text-slate-400">{idx + 1}</td>
@@ -1866,11 +1880,7 @@ export default function AccountsView({
                       </tr>
                     ))}
 
-                  {repairPresets.filter(p => 
-                    p.sparePart.toLowerCase().includes(presetsSearchTerm.toLowerCase()) ||
-                    p.repairSubCategory.toLowerCase().includes(presetsSearchTerm.toLowerCase()) ||
-                    p.repairSubItem.toLowerCase().includes(presetsSearchTerm.toLowerCase())
-                  ).length === 0 && (
+                  {filteredRepairPresets.length === 0 && (
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-slate-400">
                         <Wrench className="h-8 w-8 mx-auto text-slate-300 mb-2" />
