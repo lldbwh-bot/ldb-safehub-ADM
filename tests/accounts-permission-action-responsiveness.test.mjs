@@ -57,4 +57,16 @@ assert.doesNotMatch(
   'AccountsView master-data filters must use safe text normalization for nullable imported records',
 );
 
+assert.doesNotMatch(
+  accountsSource,
+  /àº|à»|â€¢|�|Ã|Â/,
+  'AccountsView Lao UI text must remain UTF-8 and not mojibake',
+);
+
+assert.match(
+  accountsSource,
+  /ຈັດການລະບົບ/,
+  'AccountsView must contain readable Lao system administration text',
+);
+
 console.log('Accounts permission action responsiveness checks passed.');
