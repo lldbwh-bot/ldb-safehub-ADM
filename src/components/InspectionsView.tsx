@@ -383,7 +383,7 @@ export default function InspectionsView({
       log["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || '',
     );
     setEditingInspection(log);
-    setEditDate(log.ວັນທີ່ກວດ || '');
+    setEditDate(formatDateInputValue(log.ວັນທີ່ກວດ || new Date()));
     setEditTime(log.ເວລາກວດ || '');
     setEditBranch(log["ສາຂາ "] || '');
     setEditUnit(log["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || '');
@@ -569,8 +569,11 @@ export default function InspectionsView({
 
     const hasDefects = defectiveItemsList.length > 0 || editManualIncidentForms.length > 0;
 
+    const formattedEditDate = formatDateInputValue(editDate);
+    const editDateObject = formattedEditDate ? new Date(`${formattedEditDate}T00:00:00`) : null;
+
     const updatedFields: Partial<InspectionRecord> = {
-      ວັນທີ່ກວດ: editDate,
+      ວັນທີ່ກວດ: formattedEditDate,
       ເວລາກວດ: editTime,
       "ສາຂາ ": editBranch,
       "ຝ່າຍ/ໜ່ວຍບໍລິການ": editUnit,
@@ -583,8 +586,8 @@ export default function InspectionsView({
       ລາຍການກວດ: evaluatedList.join(" , "),
       ສະຖານະ: hasDefects ? "ຜິດປົກກະຕີ" : "ປົກກະຕີ",
       ຈຳນວນເຫດການທີ່ພົບ: editManualIncidentForms.length,
-      ເດືອນ: editDate ? new Date(editDate).getMonth() + 1 : editingInspection.ເດືອນ,
-      ປີ: editDate ? new Date(editDate).getFullYear() : editingInspection.ປີ,
+      ເດືອນ: editDateObject ? editDateObject.getMonth() + 1 : editingInspection.ເດືອນ,
+      ປີ: editDateObject ? editDateObject.getFullYear() : editingInspection.ປີ,
     };
 
     // Save and compile individual incidents (associated items)
@@ -610,7 +613,7 @@ export default function InspectionsView({
         ລາຍລະອຽດປັນຫາທີ່ພົບ: dForm.problem.trim() || `${itemText}`,
         ປະເມີນຜົນກະທົບ: dForm.impact,
         ວີທີແກ້ໄຂ: dForm.solution.trim() || "ລໍຖ້າກວດສອບ ແລະ ວາງແຜນ",
-        ວັນທີ່ກວດ: editDate,
+        ວັນທີ່ກວດ: formattedEditDate,
         ເວລາກວດ: editTime,
         ຜູ້ກວດກາ: editInspectorStatus,
         ຊື່ຜູ້ກວດ: editInspector,
@@ -624,8 +627,8 @@ export default function InspectionsView({
           "ຂະແໜງຊັບສິນ": dForm.assetSector
         } as any,
         ຊັ້ນອາຄານ: editingInspection.ຊັ້ນອາຄານ || '1',
-        ເດືອນ: editDate ? new Date(editDate).getMonth() + 1 : editingInspection.ເດືອນ,
-        ປີ: editDate ? new Date(editDate).getFullYear() : editingInspection.ປີ,
+        ເດືອນ: editDateObject ? editDateObject.getMonth() + 1 : editingInspection.ເດືອນ,
+        ປີ: editDateObject ? editDateObject.getFullYear() : editingInspection.ປີ,
         order: originalInc?.order || editingInspection.order || idx + 1,
         ຮັບອໍເດີ: originalInc ? originalInc.ຮັບອໍເດີ : 1,
         ຈຳນວນຄົງຄ້າງ: originalInc ? originalInc.ຈຳນວນຄົງຄ້າງ : 1,
@@ -3435,6 +3438,7 @@ export default function InspectionsView({
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">ວັນທີ່ກວດ (Date)</label>
                   <input
+                    id="edit-inspection-date-input"
                     type="date"
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}

@@ -91,9 +91,29 @@ try {
     'New Safety Inspection form must expose a selectable inspection date field',
   );
   assert.match(
+    inspectionsSource,
+    /id="edit-inspection-date-input"/,
+    'Edit Safety Inspection form must expose a selectable inspection date field for correcting saved records',
+  );
+  assert.match(
+    inspectionsSource,
+    /setEditDate\(formatDateInputValue\(/,
+    'Edit Safety Inspection must normalize the saved source date before binding it to the date input',
+  );
+  assert.match(
     incidentsSource,
     /id="direct-incident-date-input"/,
     'Direct Incident Report form must expose a selectable incident/report date field',
+  );
+  assert.match(
+    incidentsSource,
+    /id="edit-incident-date-input"/,
+    'Edit Direct Incident Report form must expose a selectable incident/report date field for correcting saved records',
+  );
+  assert.match(
+    incidentsSource,
+    /setEditDate\(formatDateInputValue\(/,
+    'Edit Direct Incident Report must normalize the saved source date before binding it to the date input',
   );
   assert.match(
     incidentsSource,

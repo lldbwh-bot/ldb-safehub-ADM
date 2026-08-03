@@ -547,6 +547,8 @@ export default function IncidentsView({
   const [editProblem, setEditProblem] = useState('');
   const [editImpact, setEditImpact] = useState('ປານກາງ');
   const [editProposedSolution, setEditProposedSolution] = useState('');
+  const [editDate, setEditDate] = useState(() => formatDateInputValue());
+  const [editTime, setEditTime] = useState('');
   const [editTargetBranch, setEditTargetBranch] = useState(currentUser.branch);
   const [editTargetUnit, setEditTargetUnit] = useState(currentUser.branch);
   const [editTargetSector, setEditTargetSector] = useState('ຂະແໜງ ບໍລິການ');
@@ -586,6 +588,8 @@ export default function IncidentsView({
     setEditProblem(inc.ລາຍລະອຽດປັນຫາທີ່ພົບ || '');
     setEditImpact(inc.ປະເມີນຜົນກະທົບ || 'ປານກາງ');
     setEditProposedSolution(inc.ວີທີແກ້ໄຂ || '');
+    setEditDate(formatDateInputValue(inc.ວັນທີ່ກວດ || new Date()));
+    setEditTime(inc.ເວລາກວດ || '');
     setEditTargetBranch(inc["ສາຂາ "] || currentUser.branch);
     setEditTargetUnit(inc["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || currentUser.branch);
     setEditTargetSector(inc.ຂະແໜງ || 'ຂະແໜງ ບໍລິການ');
@@ -617,6 +621,8 @@ export default function IncidentsView({
       return;
     }
 
+    const formattedEditDate = formatDateInputValue(editDate);
+    const editDateObject = formattedEditDate ? new Date(`${formattedEditDate}T00:00:00`) : null;
     const finalRoom = editRoomOrLocation.trim() || "ບໍ່ລະບຸ";
     onUpdateIncident(editingIncident.PID, {
       ລະຫັດຊັບສິນ: editAssetCode.trim(),
@@ -626,6 +632,10 @@ export default function IncidentsView({
       ລາຍລະອຽດປັນຫາທີ່ພົບ: editProblem.trim(),
       ປະເມີນຜົນກະທົບ: editImpact,
       ວີທີແກ້ໄຂ: editProposedSolution.trim() || "ລໍຖ້າກວດສອບ",
+      ວັນທີ່ກວດ: formattedEditDate,
+      ເວລາກວດ: editTime || editingIncident.ເວລາກວດ || '',
+      ເດືອນ: editDateObject ? editDateObject.getMonth() + 1 : editingIncident.ເດືອນ,
+      ປີ: editDateObject ? editDateObject.getFullYear() : editingIncident.ປີ,
       "ສາຂາ ": editTargetBranch,
       "ຝ່າຍ/ໜ່ວຍບໍລິການ": editTargetUnit,
       ຂະແໜງ: editTargetSector,
@@ -2580,6 +2590,31 @@ export default function IncidentsView({
                   <span className="font-bold text-indigo-900 text-[13px] flex items-center gap-1.5">
                     📍 ສະຖານທີ່ພົບເຫດການ (Incident Occurrence Location)
                   </span>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">ວັນທີແຈ້ງ/ວັນທີກວດ (Date) *</label>
+                  <input
+                    id="edit-incident-date-input"
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white text-slate-800 font-medium"
+                    required
+                  />
+                  <p className="mt-1 text-[10px] font-semibold text-slate-500">Export: {formatExcelDate(editDate)}</p>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">ເວລາ (Time)</label>
+                  <input
+                    id="edit-incident-time-input"
+                    type="text"
+                    value={editTime}
+                    onChange={(e) => setEditTime(e.target.value)}
+                    placeholder="HH:mm"
+                    className="w-full border border-slate-300 rounded-lg p-2.5 bg-white text-slate-800 font-medium"
+                  />
                 </div>
 
                 <div>
