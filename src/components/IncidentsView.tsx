@@ -30,6 +30,7 @@ import {
 } from '../incidentAssetMasterData';
 import {
   getIncidentCaseDisplayCode,
+  normalizeCaseSector,
   resolveIncidentCaseReference,
 } from '../incidentCaseReference';
 import {
@@ -428,7 +429,7 @@ export default function IncidentsView({
       if (matched.ສາຂາຊັບສິນ) {
         setAssetBranch(matched.ສາຂາຊັບສິນ);
         setAssetUnit(matched.ຝ່າຍຊັບສິນ || '');
-        setAssetSector(matched.ຂະແໜງຊັບສິນ || 'ຂະແໜງ ບໍລິການ');
+        setAssetSector(normalizeCaseSector(matched.ຂະແໜງຊັບສິນ));
       }
     }
   };
@@ -443,17 +444,17 @@ export default function IncidentsView({
       if (matched.ສາຂາຊັບສິນ) {
         setEditAssetBranch(matched.ສາຂາຊັບສິນ);
         setEditAssetUnit(matched.ຝ່າຍຊັບສິນ || '');
-        setEditAssetSector(matched.ຂະແໜງຊັບສິນ || 'ຂະແໜງ ບໍລິການ');
+        setEditAssetSector(normalizeCaseSector(matched.ຂະແໜງຊັບສິນ));
       }
     }
   };
   const [targetBranch, setTargetBranch] = useState(() => currentUser?.branch || '');
   const [targetUnit, setTargetUnit] = useState(() => currentUser?.branch || '');
-  const [targetSector, setTargetSector] = useState('ຂະແໜງ ບໍລິການ');
+  const [targetSector, setTargetSector] = useState('none');
   const [locationDetail, setLocationDetail] = useState('');
   const [assetBranch, setAssetBranch] = useState(() => currentUser?.branch || '');
   const [assetUnit, setAssetUnit] = useState(() => currentUser?.branch || '');
-  const [assetSector, setAssetSector] = useState('ຂະແໜງ ບໍລິການ');
+  const [assetSector, setAssetSector] = useState('none');
   const [floor, setFloor] = useState('1');
   const [inspectorName, setInspectorName] = useState(() => currentUser?.username || '');
   const [incidentDateInput, setIncidentDateInput] = useState(() => formatDateInputValue());
@@ -551,11 +552,11 @@ export default function IncidentsView({
   const [editTime, setEditTime] = useState('');
   const [editTargetBranch, setEditTargetBranch] = useState(currentUser.branch);
   const [editTargetUnit, setEditTargetUnit] = useState(currentUser.branch);
-  const [editTargetSector, setEditTargetSector] = useState('ຂະແໜງ ບໍລິການ');
+  const [editTargetSector, setEditTargetSector] = useState('none');
   const [editLocationDetail, setEditLocationDetail] = useState('');
   const [editAssetBranch, setEditAssetBranch] = useState(currentUser.branch);
   const [editAssetUnit, setEditAssetUnit] = useState(currentUser.branch);
-  const [editAssetSector, setEditAssetSector] = useState('ຂະແໜງ ບໍລິການ');
+  const [editAssetSector, setEditAssetSector] = useState('none');
   const [editFloor, setEditFloor] = useState('1');
 
   const [editSystemCategory, setEditSystemCategory] = useState('ລະບົບຄວາມປອດໄພ');
@@ -592,11 +593,11 @@ export default function IncidentsView({
     setEditTime(inc.ເວລາກວດ || '');
     setEditTargetBranch(inc["ສາຂາ "] || currentUser.branch);
     setEditTargetUnit(inc["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || currentUser.branch);
-    setEditTargetSector(inc.ຂະແໜງ || 'ຂະແໜງ ບໍລິການ');
+    setEditTargetSector(normalizeCaseSector(inc.ຂະແໜງ));
     setEditLocationDetail(inc.ສະຖານທີພົບເຫດການ || '');
     setEditAssetBranch((inc as any).ສາຂາຊັບສິນ || inc["ສາຂາ "] || currentUser.branch);
     setEditAssetUnit((inc as any).ຝ່າຍຊັບສິນ || inc["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || currentUser.branch);
-    setEditAssetSector((inc as any).ຂະແໜງຊັບສິນ || 'none');
+    setEditAssetSector(normalizeCaseSector((inc as any).ຂະແໜງຊັບສິນ));
     setEditFloor(caseReference.floor || '1');
     setEditRoomOrLocation(caseReference.roomLocation);
     
@@ -754,7 +755,7 @@ export default function IncidentsView({
     setRoomOrLocation('');
     setAssetBranch(currentUser.branch);
     setAssetUnit(currentUser.branch);
-    setAssetSector('ຂະແໜງ ບໍລິການ');
+    setAssetSector('none');
     setHasAsset('yes');
     setIncidentDateInput(formatDateInputValue());
     resetDirectIncidentAddModes();

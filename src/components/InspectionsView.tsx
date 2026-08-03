@@ -318,7 +318,7 @@ export default function InspectionsView({
 
   const [targetBranch, setTargetBranch] = useState(() => currentUser?.branch || '');
   const [targetUnit, setTargetUnit] = useState(() => currentUser?.branch || '');
-  const [targetSector, setTargetSector] = useState('ຂະແແໜງ ບໍລິການ');
+  const [targetSector, setTargetSector] = useState('none');
   const [inspectorName, setInspectorName] = useState(() => currentUser?.username || '');
   const [inspectionDateInput, setInspectionDateInput] = useState(() => formatDateInputValue());
   const [inspectorStatus, setInspectorStatus] = useState("ພະນັກງານ ທພລ"); // "ພະນັກງານ ທພລ" | "ພາຍນອກ"

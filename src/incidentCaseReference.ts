@@ -20,6 +20,10 @@ export interface IncidentCaseReference {
 }
 
 const EMPTY_VALUES = new Set(['', 'none', 'null', 'undefined', 'nan']);
+const LEGACY_DEFAULT_SECTORS = new Set([
+  'ຂະແໜງ ບໍລິການ',
+  'ຂະແແໜງ ບໍລິການ',
+]);
 
 const cleanValue = (value: unknown): string => {
   if (value === null || value === undefined) return '';
@@ -36,6 +40,12 @@ const firstValue = (...values: unknown[]): string => {
     if (cleaned) return cleaned;
   }
   return '';
+};
+
+export const normalizeCaseSector = (value: unknown): string => {
+  const cleaned = cleanValue(value);
+  if (!cleaned) return 'none';
+  return LEGACY_DEFAULT_SECTORS.has(cleaned) ? 'none' : cleaned;
 };
 
 const isDirectIncident = (incident: IncidentRecord): boolean =>
@@ -145,7 +155,7 @@ export function resolveIncidentCaseReference(
       incident['ຝ່າຍ/ໜ່ວຍບໍລິການ'],
       parent?.['ຝ່າຍ/ໜ່ວຍບໍລິການ'],
     ),
-    sector: firstValue(incident.ຂະແໜງ, parent?.ຂະແໜງ),
+    sector: normalizeCaseSector(firstValue(incident.ຂະແໜງ, parent?.ຂະແໜງ)),
     floor: firstValue(incident.ຊັ້ນອາຄານ, parent?.ຊັ້ນອາຄານ),
     roomLocation: firstValue(
       incident.ສະຖານທີ່_ຫ້ອງ,

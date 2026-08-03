@@ -28,8 +28,30 @@ try {
 
   const {
     getIncidentCaseDisplayCode,
+    normalizeCaseSector,
     resolveIncidentCaseReference,
   } = await import(pathToFileURL(bundlePath).href);
+
+  const legacyDefaultSector = '\u0e82\u0eb0\u0ec1\u0edc\u0e87 \u0e9a\u0ecd\u0ea5\u0eb4\u0e81\u0eb2\u0e99';
+  const legacyTypoDefaultSector = '\u0e82\u0eb0\u0ec1\u0ec1\u0edc\u0e87 \u0e9a\u0ecd\u0ea5\u0eb4\u0e81\u0eb2\u0e99';
+  const trueSector = '\u0e82\u0eb0\u0ec1\u0edc\u0e87 IT';
+
+  assert.equal(
+    normalizeCaseSector(legacyDefaultSector),
+    'none',
+    'legacy default service Sector must not be shown as a real Case sector',
+  );
+  assert.equal(
+    normalizeCaseSector(legacyTypoDefaultSector),
+    'none',
+    'legacy typo default service Sector must not be shown as a real Case sector',
+  );
+  assert.equal(
+    normalizeCaseSector(trueSector),
+    trueSector,
+    'real non-default Sector values must be preserved',
+  );
+  assert.equal(normalizeCaseSector(''), 'none');
 
   const inspection = {
     PID: 'inspection-parent',
@@ -241,6 +263,16 @@ try {
     path.join(root, 'src', 'components', 'IncidentsView.tsx'),
     'utf8',
   );
+  assert.doesNotMatch(
+    incidentsViewSource,
+    /useState\(['"]\u0e82\u0eb0\u0ec1\u0edc\u0e87 \u0e9a\u0ecd\u0ea5\u0eb4\u0e81\u0eb2\u0e99['"]\)/,
+    'Direct Incident state must not default Sector to service branch',
+  );
+  assert.doesNotMatch(
+    incidentsViewSource,
+    /\|\|\s*['"]\u0e82\u0eb0\u0ec1\u0edc\u0e87 \u0e9a\u0ecd\u0ea5\u0eb4\u0e81\u0eb2\u0e99['"]/,
+    'Direct Incident fallbacks must not inject the service branch Sector',
+  );
   const startEditingSource = incidentsViewSource.slice(
     incidentsViewSource.indexOf('const startEditing ='),
     incidentsViewSource.indexOf('const handleUpdateIncidentSubmit ='),
@@ -289,6 +321,12 @@ try {
   assert.ok(
     (incidentsViewSource.match(/getIncidentCaseDisplayCode\(/g) || []).length >= 3,
     'pending Card, approved table, and Detail must distinguish sibling Case labels',
+  );
+
+  assert.doesNotMatch(
+    inspectionsViewSource,
+    /\u0e82\u0eb0\u0ec1\u0ec1\u0edc\u0e87 \u0e9a\u0ecd\u0ea5\u0eb4\u0e81\u0eb2\u0e99|\u0e82\u0eb0\u0ec1\u0edc\u0e87 \u0e9a\u0ecd\u0ea5\u0eb4\u0e81\u0eb2\u0e99/,
+    'Inspection form must not seed new Cases with legacy default service Sector values',
   );
 } finally {
   await rm(temporaryDirectory, { recursive: true, force: true });

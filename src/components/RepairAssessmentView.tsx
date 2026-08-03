@@ -11,7 +11,7 @@ import * as XLSX from 'xlsx';
 import { IncidentRecord, UserAccount, RepairAssessmentRecord, RepairSubItem, RepairTrackingRecord, RepairPreset } from '../types';
 import { getSavedBranches, getSavedInspections, getSavedChecklistItems, cleanString, formatExcelDate, formatLAK, getSavedRepairPresets } from '../dataStore';
 import { LOCATION_FLOOR_LABEL } from '../locationFloorOptions';
-import { resolveIncidentCaseReference } from '../incidentCaseReference';
+import { normalizeCaseSector, resolveIncidentCaseReference } from '../incidentCaseReference';
 import { getRepairSubCategoryOptions, normalizeRepairSubCategory } from '../repairAssessmentCategories';
 import {
   isNoPartRepairAssessmentWorkType,
@@ -564,7 +564,7 @@ export default function RepairAssessmentView({
         "ພື້ນທີ່/ຈຸດກວດ ( Area / Point)": asm.subsystemCategory || (linkedInc ? getResolvedSubsystemCategory(linkedInc) : ""),
         "ສາຂາ (Branch)": asm.branch || linkedInc?.["ສາຂາ "] || "",
         "ຝ່າຍ/ໜ່ວຍບໍລິການ (Division/Unit)": asm.division || linkedInc?.["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || "",
-        "ຂະແໜງ (Sector)": asm.sector || linkedInc?.ຂະແໜງ || "",
+        "ຂະແໜງ (Sector)": normalizeCaseSector(asm.sector || linkedInc?.ຂະແໜງ || ""),
         [LOCATION_FLOOR_LABEL]: asm.roomOrLocation || linkedInc?.ສະຖານທີ່_ຫ້ອງ || "—",
         "ລະຫັດຊັບສິນ (Asset Code)": asm.assetCode || linkedInc?.ລະຫັດຊັບສິນ || "",
         "ລາຍການຊັບສິນ (Asset Name)": asm.assetName || linkedInc?.ລາຍການ || "",
