@@ -1927,9 +1927,9 @@ const isDemoPreviewRuntime = (): boolean => {
 };
 
 const pickBranch = (prefix: string, fallbackIndex: number): string =>
-  BRANCHES.find((item) => String((item as any)["àºªàº²àº‚àº²"] || '').startsWith(prefix))?.["àºªàº²àº‚àº²"]
-  || BRANCHES[fallbackIndex]?.["àºªàº²àº‚àº²"]
-  || BRANCHES[0]?.["àºªàº²àº‚àº²"]
+  BRANCHES.find((item) => String((item as any)["\u0EAA\u0EB2\u0E82\u0EB2"] || '').startsWith(prefix))?.["\u0EAA\u0EB2\u0E82\u0EB2"]
+  || BRANCHES[fallbackIndex]?.["\u0EAA\u0EB2\u0E82\u0EB2"]
+  || BRANCHES[0]?.["\u0EAA\u0EB2\u0E82\u0EB2"]
   || '';
 
 const buildDemoPreviewUsers = (): UserAccount[] => {

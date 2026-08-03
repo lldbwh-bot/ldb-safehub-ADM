@@ -979,7 +979,7 @@ export default function AccountsView({
                         </span>
                       </td>
                       <td className="p-4 font-semibold text-slate-700">
-                        ðŸ¢ {user.branch}
+                        🏢 {user.branch}
                       </td>
                       <td className="p-4">
                         <div className="flex flex-wrap gap-1 max-w-sm">
@@ -995,7 +995,7 @@ export default function AccountsView({
                                     : 'bg-emerald-50 text-emerald-800 border-emerald-100'
                                 }`}
                               >
-                                âœ… {cleanLabel}
+                                ✅ {cleanLabel}
                               </span>
                             );
                           })}
@@ -1090,7 +1090,7 @@ export default function AccountsView({
                 {uniqueBranches.length > 0 && (
                   <div className="mt-2 bg-emerald-50/50 p-2 rounded-xl border border-emerald-100/70">
                     <span className="block text-[10px] font-bold text-emerald-850 mb-1">
-                      ðŸ’¡ ໃຊ້ສາຂາເກົ່າທີ່ມີໃນລະບົບ (Or use existing branch):
+                      💡 ໃຊ້ສາຂາເກົ່າທີ່ມີໃນລະບົບ (Or use existing branch):
                     </span>
                     <select
                       onChange={(e) => {
@@ -1178,7 +1178,7 @@ export default function AccountsView({
                         {item["ສາຂາ"]}
                       </td>
                       <td className="p-4 font-semibold text-slate-700">
-                        ðŸ“ {item["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || '-'}
+                        📁 {item["ຝ່າຍ/ໜ່ວຍບໍລິການ"] || '-'}
                       </td>
                       <td className="p-4 text-center">
                         <button
@@ -1428,10 +1428,10 @@ export default function AccountsView({
                   className="border border-slate-300 rounded-xl p-2 px-3 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 cursor-pointer font-bold font-sans"
                 >
                   <option value="ALL">ທຸກໆປະເພດຟອມ (All Forms)</option>
-                  <option value="ສຳນັກງານໃຫຍ່">ðŸ¢ ຟອມ ສຳນັກງານໃຫຍ່ (HQ)</option>
-                  <option value="ສາຂາ">ðŸ›ï¸ ຟອມ ສາຂາ (Branch)</option>
-                  <option value="ໜ່ວຍບໍລິການ">ðŸª ຟອມ ໜ່ວຍບໍລິການ (Service Unit)</option>
-                  <option value="ຫ້ອງຮັບເງິນ">ðŸ’° ຟອມ ຫ້ອງຮັບເງິນ (Cash Office)</option>
+                  <option value="ສຳນັກງານໃຫຍ່">🏢 ຟອມ ສຳນັກງານໃຫຍ່ (HQ)</option>
+                  <option value="ສາຂາ">🏛️ ຟອມ ສາຂາ (Branch)</option>
+                  <option value="ໜ່ວຍບໍລິການ">🏪 ຟອມ ໜ່ວຍບໍລິການ (Service Unit)</option>
+                  <option value="ຫ້ອງຮັບເງິນ">💰 ຟອມ ຫ້ອງຮັບເງິນ (Cash Office)</option>
                 </select>
               </div>
 
@@ -1471,31 +1471,31 @@ export default function AccountsView({
                         {idx + 1}
                       </td>
                       <td className="p-4 font-bold text-slate-900 truncate" title={item["ລະບົບທີ່ກວດ"]}>
-                        ðŸ›¡ï¸ {item["ລະບົບທີ່ກວດ"]}
+                        🛡️ {item["ລະບົບທີ່ກວດ"]}
                       </td>
                       <td className="p-4 font-semibold text-slate-700 truncate" title={item["ໝວດລະບົບກວດ"]}>
-                        ðŸ“¦ {item["ໝວດລະບົບກວດ"]}
+                        📦 {item["ໝວດລະບົບກວດ"]}
                       </td>
                       <td className="p-4 text-center">
                         {item.Form_Type === "ສຳນັກງານໃຫຍ່" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
-                            ðŸ¢ ສຳນັກງານໃຫຍ່
+                            🏢 ສຳນັກງານໃຫຍ່
                           </span>
                         ) : item.Form_Type === "ສາຂາ" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            ðŸ›ï¸ ສາຂາ
+                            🏛️ ສາຂາ
                           </span>
                         ) : item.Form_Type === "ໜ່ວຍບໍລິການ" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
-                            ðŸª ໜ່ວຍບໍລິການ
+                            🏪 ໜ່ວຍບໍລິການ
                           </span>
                         ) : item.Form_Type === "ຫ້ອງຮັບເງິນ" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                            ðŸ’° ຫ້ອງຮັບເງິນ
+                            💰 ຫ້ອງຮັບເງິນ
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-650 border border-slate-200">
-                            ðŸ›ï¸ {item.Form_Type || "ສາຂາ"}
+                            🏛️ {item.Form_Type || "ສາຂາ"}
                           </span>
                         )}
                       </td>
@@ -1624,7 +1624,7 @@ export default function AccountsView({
                     .map((item, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/50 transition">
                         <td className="p-4 text-center font-mono text-slate-400">{idx + 1}</td>
-                        <td className="p-4 text-slate-800 font-medium">âœ¨ {item["ຂະແໜງ"]}</td>
+                        <td className="p-4 text-slate-800 font-medium">✨ {item["ຂະແໜງ"]}</td>
                         <td className="p-4 text-center">
                           <button
                             type="button"
@@ -2034,7 +2034,7 @@ export default function AccountsView({
                 {/* Checkbox Permission Modules List */}
                 <div className="pt-2 border-t border-slate-200">
                   <span className="block text-xs font-bold text-slate-700 mb-2">
-                    ðŸ”‘ ກຳນົດສິດການເຂົ້າເຖິງ ໜ້າ/ຟັງຊັນ (Module Tab Visibility):
+                    🔑 ກຳນົດສິດການເຂົ້າເຖິງ ໜ້າ/ຟັງຊັນ (Module Tab Visibility):
                   </span>
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
                     {AVAILABLE_TABS.map(tab => {
@@ -2178,7 +2178,7 @@ export default function AccountsView({
                     const findTab = AVAILABLE_TABS.find(t => t.id === tabId);
                     return (
                       <span key={tabId} className="text-[10px] px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100 font-bold">
-                        âœ… {findTab ? findTab.label : tabId}
+                        ✅ {findTab ? findTab.label : tabId}
                       </span>
                     );
                   })}

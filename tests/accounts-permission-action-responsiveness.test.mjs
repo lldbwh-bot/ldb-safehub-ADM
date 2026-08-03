@@ -6,6 +6,10 @@ const accountsSource = await readFile(
   join(process.cwd(), 'src/components/AccountsView.tsx'),
   'utf8',
 );
+const dataStoreSource = await readFile(
+  join(process.cwd(), 'src/dataStore.ts'),
+  'utf8',
+);
 
 const userDeleteBody = accountsSource.match(/const executeDeleteUser = async \(\) => \{([\s\S]*?)\n  \};/)?.[1] || '';
 const userSaveBody = accountsSource.match(/const handleSave = async \(e: React\.FormEvent\) => \{([\s\S]*?)\n  \};/)?.[1] || '';
@@ -59,7 +63,7 @@ assert.doesNotMatch(
 
 assert.doesNotMatch(
   accountsSource,
-  /àº|à»|â€¢|�|Ã|Â/,
+  /àº|à»|â€¢|�|Ã|Â|ðŸ|âœ/,
   'AccountsView Lao UI text must remain UTF-8 and not mojibake',
 );
 
@@ -67,6 +71,18 @@ assert.match(
   accountsSource,
   /ຈັດການລະບົບ/,
   'AccountsView must contain readable Lao system administration text',
+);
+
+assert.doesNotMatch(
+  dataStoreSource,
+  /àº|à»|â€¢|�|Ã|Â|ðŸ|âœ|\?\?\?\?/,
+  'dataStore master-data lookup keys must remain UTF-8 safe and not mojibake',
+);
+
+assert.match(
+  dataStoreSource,
+  /"\\u0EAA\\u0EB2\\u0E82\\u0EB2"/,
+  'dataStore branch lookup must use the Lao branch key via unicode escapes',
 );
 
 console.log('Accounts permission action responsiveness checks passed.');
