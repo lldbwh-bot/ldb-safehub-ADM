@@ -1433,6 +1433,8 @@ export default function App() {
     return <LoginView onLoginSuccess={handleLoginSuccess} />;
   }
 
+  const currentUserAvatar = String(currentUser.image || '').trim();
+
   return (
     <div className="safehub-app-theme min-h-screen bg-ldb-brand flex flex-col font-sans text-slate-100">
       <header className="sticky top-0 w-full bg-[#0a1120]/95 backdrop-blur-md text-slate-100 border-b border-blue-900/40 z-40 select-none shadow-xl">
@@ -1611,7 +1613,15 @@ export default function App() {
               {/* User Session card */}
               <div className="flex items-center space-x-2.5 bg-[#111c30]/50 border border-blue-900/30 px-3 py-1.5 rounded-xl select-none">
                 <div className="bg-[#C5A059] text-[#050a14] font-black h-7 w-7 rounded-full flex items-center justify-center text-[10px] shadow-md">
-                  {(currentUser.username?.[0] || 'U').toUpperCase()}
+                  {currentUserAvatar ? (
+                    <img
+                      src={currentUserAvatar}
+                      alt={`${currentUser.username || 'User'} avatar`}
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  ) : (
+                    (currentUser.username?.[0] || 'U').toUpperCase()
+                  )}
                 </div>
                 <div className="min-w-0 text-left">
                   <p className="text-[10px] font-bold text-slate-100 truncate max-w-[120px] leading-tight flex items-center">
@@ -1691,7 +1701,15 @@ export default function App() {
             <div className="flex lg:hidden items-center space-x-2.5">
               {/* Profile initial on mobile */}
               <div className="bg-[#C5A059] text-[#050a14] font-black h-7.5 w-7.5 rounded-full flex items-center justify-center text-[10px] shadow-sm select-none">
-                {(currentUser.username?.[0] || 'U').toUpperCase()}
+                {currentUserAvatar ? (
+                  <img
+                    src={currentUserAvatar}
+                    alt={`${currentUser.username || 'User'} avatar`}
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  (currentUser.username?.[0] || 'U').toUpperCase()
+                )}
               </div>
               
               <button

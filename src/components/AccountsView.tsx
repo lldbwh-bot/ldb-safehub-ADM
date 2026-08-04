@@ -149,6 +149,7 @@ export default function AccountsView({
     const rows = filteredUsers.map((user, index) => ({
       'No.': index + 1,
       'Username': user.username || '',
+      'Password': getStoredPasswordValue(user),
       'Role': user.status || '',
       'Branch': user.branch || '',
       'Visible Tabs': (user.allowedTabs || []).join(', '),
@@ -1977,10 +1978,10 @@ export default function AccountsView({
                       )}
                     </div>
                     <input
-                      type="url"
+                      type="text"
                       value={image}
                       onChange={(e) => setImage(e.target.value)}
-                      placeholder="https://... (ບໍ່ບັງຄັບ)"
+                      placeholder="https://... ຫຼື /api/files/... (ບໍ່ບັງຄັບ)"
                       className="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800"
                     />
                   </div>

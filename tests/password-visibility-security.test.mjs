@@ -56,10 +56,10 @@ assert.match(
   /handleExportUsersExcel/,
   'User Permissions must provide an export/download action for the filtered user list',
 );
-assert.doesNotMatch(
+assert.match(
   accountsSource,
-  /password_raw:\s*user\.password_raw|Password['"]\s*:\s*user\.password_raw/,
-  'User export must not include raw passwords',
+  /['"]Password['"]\s*:\s*getStoredPasswordValue\(user\)/,
+  'User export must include the stored password value for admin-controlled account backup/export',
 );
 assert.match(
   accountsSource,
@@ -75,6 +75,11 @@ assert.match(
   accountsSource,
   /type="file"[\s\S]{0,200}accept="image\/\*"/,
   'User avatar editor should allow selecting an image file from the computer',
+);
+assert.match(
+  accountsSource,
+  /type="text"[\s\S]{0,180}\/api\/files\/\.\.\./,
+  'User avatar URL editor must accept R2-backed relative file URLs such as /api/files/{id}',
 );
 assert.match(
   accountsSource,
