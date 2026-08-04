@@ -85,7 +85,9 @@ export default {
           return handleBrowserImport(request, env, auth, requestId);
         }
         if (request.method === 'GET' && url.pathname === '/api/bootstrap') {
-          return bootstrap(env, auth, requestId);
+          return bootstrap(env, auth, requestId, {
+            revisionsOnly: url.searchParams.get('revisionsOnly') === '1',
+          });
         }
         const userMatch = /^\/api\/users(?:\/([^/]+))?$/.exec(url.pathname);
         if (userMatch) {

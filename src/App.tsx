@@ -319,8 +319,11 @@ export default function App() {
   }, []);
 
   // Auto refresh from the central D1 API, then hydrate the existing UI store.
+  // Keep this light: hidden tabs skip polling, and centralDataStore only pulls
+  // datasets whose server revision changed.
   useEffect(() => {
     const refresh = async () => {
+      if (document.hidden) return;
       try {
         await pullCentralData();
       } catch (error) {
@@ -347,7 +350,7 @@ export default function App() {
       }
     };
     if (getApiToken()) void refresh();
-    const interval = setInterval(() => void refresh(), 10000);
+    const interval = setInterval(() => void refresh(), 60000);
     return () => clearInterval(interval);
   }, []);
 

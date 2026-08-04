@@ -42,6 +42,38 @@ const LOCAL_KEYS: Record<CentralDataset, string> = {
   'repair-presets': 'ldb_repair_presets_v3',
 };
 
+const CENTRAL_REVISIONS_KEY = 'ldb_central_dataset_revisions_v1';
+const CENTRAL_USERS_REFRESH_KEY = 'ldb_central_users_last_refresh_v1';
+const USERS_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+
+const readStoredRevisions = (): Partial<Record<CentralDataset, number>> => {
+  try {
+    const raw = window.localStorage.getItem(CENTRAL_REVISIONS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return parsed as Partial<Record<CentralDataset, number>>;
+  } catch {
+    return {};
+  }
+};
+
+const writeStoredRevisions = (
+  revisions: Partial<Record<CentralDataset, number>>,
+): void => {
+  window.localStorage.setItem(CENTRAL_REVISIONS_KEY, JSON.stringify(revisions));
+};
+
+const shouldRefreshUsers = (): boolean => {
+  const raw = window.localStorage.getItem(CENTRAL_USERS_REFRESH_KEY);
+  const last = raw ? Number(raw) : 0;
+  return !Number.isFinite(last) || Date.now() - last > USERS_REFRESH_INTERVAL_MS;
+};
+
+const markUsersRefreshed = (): void => {
+  window.localStorage.setItem(CENTRAL_USERS_REFRESH_KEY, String(Date.now()));
+};
+
 const firstString = (record: JsonRecord, names: string[]): string => {
   for (const name of names) {
     const value = record[name];
@@ -207,15 +239,57 @@ export const applyBootstrapToBrowser = (
 
 export const pullCentralData = async (): Promise<void> => {
   if (!isCentralApiAvailable() || !getApiToken()) return;
+  const revisionBootstrap = await apiRequest<{
+    revisions: Partial<Record<CentralDataset, number>>;
+  }>('/api/bootstrap?revisionsOnly=1');
+  const remoteRevisions = revisionBootstrap.revisions || {};
+  const localRevisions = readStoredRevisions();
+  const changedDatasets = CENTRAL_DATASETS.filter((dataset) => {
+    const remote = remoteRevisions[dataset] || 0;
+    const local = localRevisions[dataset];
+    return local === undefined || local !== remote;
+  });
+
+  if (changedDatasets.length) {
+    const datasets: Partial<
+      Record<CentralDataset, Array<{ record: JsonRecord }>>
+    > = {};
+    for (const dataset of changedDatasets) {
+      const response = await apiRequest<{
+        records: Array<{ record: JsonRecord }>;
+        revision: number;
+      }>(`/api/datasets/${dataset}`);
+      datasets[dataset] = response.records;
+      remoteRevisions[dataset] = response.revision;
+    }
+    applyBootstrapToBrowser(datasets);
+    writeStoredRevisions({ ...localRevisions, ...remoteRevisions });
+  }
+
+  if (!shouldRefreshUsers()) return;
+  try {
+    const users = await apiRequest<{ users: CentralUser[] }>('/api/users');
+    window.localStorage.setItem('ldb_users', JSON.stringify(users.users));
+    markUsersRefreshed();
+  } catch {
+    // Branch users cannot enumerate accounts; their session data remains sufficient.
+  }
+};
+
+export const forcePullCentralData = async (): Promise<void> => {
+  if (!isCentralApiAvailable() || !getApiToken()) return;
   const bootstrap = await apiRequest<{
     datasets: Partial<
       Record<CentralDataset, Array<{ record: JsonRecord }>>
     >;
+    revisions: Partial<Record<CentralDataset, number>>;
   }>('/api/bootstrap');
   applyBootstrapToBrowser(bootstrap.datasets);
+  writeStoredRevisions(bootstrap.revisions || {});
   try {
     const users = await apiRequest<{ users: CentralUser[] }>('/api/users');
     window.localStorage.setItem('ldb_users', JSON.stringify(users.users));
+    markUsersRefreshed();
   } catch {
     // Branch users cannot enumerate accounts; their session data remains sufficient.
   }
@@ -239,7 +313,7 @@ export const initializeCentralData = async (
       datasets,
     }),
   });
-  await pullCentralData();
+  await forcePullCentralData();
 };
 
 const queues = new Map<CentralDataset, Promise<void>>();
@@ -267,6 +341,9 @@ export const queueCentralSnapshot = (
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ upserts: prepared, deletes }),
       });
+      const revisions = readStoredRevisions();
+      delete revisions[dataset];
+      writeStoredRevisions(revisions);
     })
     .catch((error) => {
       console.error(`Central sync failed for ${dataset}`, error);
@@ -307,6 +384,7 @@ export const queueCentralUsers = (values: CentralUser[]): Promise<void> => {
           );
         }
       }
+      window.localStorage.removeItem(CENTRAL_USERS_REFRESH_KEY);
     })
     .catch((error) => {
       console.error('Central user sync failed', error);
